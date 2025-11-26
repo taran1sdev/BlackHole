@@ -1,6 +1,6 @@
 #version 460 core
 
-out vec4 FragColor;
+out vec4 FragColour;
 
 uniform vec2 resolution;
 
@@ -31,6 +31,7 @@ bool raySphere(vec3 rayOrigin, vec3 rayDirection, Sphere s, out float t) {
     // calculate the distance to the hit
     t = -b - sqrt(h);
     // if the hit is in front of the camera return true
+    if (t < 0.0) t = -b + h;
     return t > 0.0;
 }
 
@@ -91,7 +92,7 @@ vec3 bendRay(vec3 rayOrigin, vec3 rayDirection, vec3 bCenter)
     if (b > 10.0) return rd;
 
     // k determines the strength of the lensing effect
-    float k = 0.5;
+    float k = 0.6;
     // calculate the angle of the bend
     float alpha = k / max(b, 0.001);
     
@@ -108,12 +109,50 @@ vec3 bendRay(vec3 rayOrigin, vec3 rayDirection, vec3 bCenter)
     return normalize(R * rd);
 }
 
+// accretion disk as a band in space
+vec3 accretionDiskColour(vec3 dir) 
+{
+    dir = normalize(dir);
+
+    // band around the equator
+    float bandWidth = 0.08;
+    float v = 1.0 - smoothstep(0.0, bandWidth, abs(dir.y));
+    
+    // create colour variation along the band
+    float ang = atan(dir.z, dir.x);
+    float t = 0.5 + 0.5 * cos(ang);
+
+    vec3 innerColour = vec3(1.2, 0.5, 0.1);
+    vec3 outerColour = vec3(1.0, 0.9, 0.3);
+
+    vec3 col = mix(innerColour, outerColour, t);
+
+    // create radial falloff 
+    float r = sqrt(dir.x * dir.x + dir.z * dir.z);
+    float falloff = smoothstep(0.3, 1.0, r);
+
+    return col * v * falloff;
+}
+
 void main() 
 {
+    // pixel coordinates (0 to 1)
+    vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
+    uv.x *= resolution.x / resolution.y;
+
+    // trace rays from camera
+    vec3 rayOrigin = camPos; 
+    vec3 rayDirection = normalize(
+            camForward + uv.x * camRight + uv.y * camUp 
+    );
+
     Sphere blackHole;
     blackHole.center = vec3(0.0, 2.5, 0.0);
     blackHole.radius = 1.0;
-    blackHole.colour = vec3(1.0, 0.1, 0.1);
+    blackHole.colour = vec3(1); 
+    float eventRadius = blackHole.radius;
+    float photonRadius = 1.7;
+    float ringWidth = 0.06;
 
     Sphere star;
     star.center = vec3(16.0, 2.0, -13.0);
@@ -125,57 +164,62 @@ void main()
     planet.radius = 0.6;
     planet.colour = vec3(0.2, 0.4, 1.0);
 
-    // pixel coordinates (0 to 1)
-    vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     
-    // trace rays from camera
-    vec3 rayOrigin = camPos; 
-    vec3 rayDirection = normalize(
-            camForward + uv.x * camRight + uv.y * camUp 
-    );
-   
-    // apply lensing effect
-    rayDirection = bendRay(rayOrigin, rayDirection, blackHole.center);
+    // apply the gravity lens effect
+    vec3 lensedDir = bendRay(rayOrigin, rayDirection, blackHole.center);
+    vec3 finalColour = vec3(0.0);
+    
+    finalColour += accretionDiskColour(lensedDir) * 1.0;
 
+    // floor grid
     float tPlane;
-    bool hitPlane = rayPlane(rayOrigin, rayDirection, vec3(0.0, 1.0, 0.0), -1.0, tPlane);
-
+    if (rayPlane(rayOrigin, rayDirection, vec3(0.0, 1.0, 0.0), -1.0, tPlane)) 
+    {
+        finalColour += gridColour(rayOrigin * lensedDir * tPlane);
+    }
+    
+    // ray sphere collisions
     float closest = 1e9;
-    vec3 colour = vec3(0.0);
-    vec3 hitPoint;
-    vec3 normal;
-    
-    float t1;
-    if (raySphere(rayOrigin, rayDirection, blackHole, t1) && t1 < closest) {
-        closest = t1;
-        hitPoint = rayOrigin + rayDirection * t1;
-        normal = normalize(hitPoint - blackHole.center);
-        float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
-        colour = blackHole.colour * diff;
+    float tHit;
+    vec3 hitCol;
+
+    if (raySphere(rayOrigin, lensedDir, star, tHit) && tHit < closest) 
+    {
+        closest = tHit;
+        vec3 p = rayOrigin + lensedDir * tHit;
+        vec3 n = normalize(p = star.center);
+        float diff = max(dot(n, normalize(vec3(1,1,-1))), 0);
+        hitCol = star.colour * diff;
     }
 
-    float t2;
-    if (raySphere(rayOrigin, rayDirection, star, t2) && t2 < closest) {
-        closest = t2;
-        hitPoint = rayOrigin + rayDirection * t2;
-        normal = normalize(hitPoint - star.center);
-        float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
-        colour = star.colour * diff;
+    if (raySphere(rayOrigin, lensedDir, planet, tHit) && tHit < closest)
+    {
+        closest = tHit;
+        vec3 p = rayOrigin + lensedDir * tHit;
+        vec3 n = normalize(p - planet.center);
+        float diff = max(dot(n, normalize(vec3(1,1,-1))), 0);
+        hitCol = planet.colour * diff;
     }
 
-    float t3;
-    if (raySphere(rayOrigin, rayDirection, planet, t3) && t3 < closest) {
-        closest = t3;
-        hitPoint = rayOrigin + rayDirection * t3;
-        normal = normalize(hitPoint - planet.center);
-        float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
-        colour = planet.colour * diff;
-    }
-    
-    if (hitPlane && tPlane < closest) {
-        closest = tPlane;
-        colour = gridColour(rayOrigin + rayDirection * tPlane);
-    }
+    if (closest < 1e9) finalColour = mix(finalColour, hitCol, 1.0);
 
-    FragColor = vec4(colour, 1.0);
+    // black hole & photon ring
+    vec3 roBH = rayOrigin - blackHole.center;
+    float b = length(cross(roBH, rayDirection));
+   
+    float holeMask = smoothstep(eventRadius + 0.02, eventRadius - 0.02, b);
+    finalColour = mix(finalColour, vec3(0.0), holeMask);
+
+    float ringMask = 
+        smoothstep(photonRadius + ringWidth, photonRadius, b) *
+        smoothstep(photonRadius - ringWidth, photonRadius, b);
+
+    vec3 ringColour = vec3(1.2, 0.4, 0.1);
+    finalColour += ringColour * ringMask * 2.0;
+
+    //float r2 = dot(uv, uv);
+    //float vignette = smoothstep(1.4, 0.2, r2);
+    //finalColour *= vignette;
+
+    FragColour = vec4(finalColour, 1.0);
 }

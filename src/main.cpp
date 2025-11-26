@@ -27,6 +27,11 @@ void mouseCallback(GLFWwindow* window, double x, double y) {
     camera.getMouse(xOffset, yOffset);
 }
 
+void framebufferCallback(GLFWwindow* window, int w, int h)
+{
+    glViewport(0, 0, w, h);
+}
+
 int main() {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -37,7 +42,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Black Hole", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(1280, 720, "Black Hole", nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -50,6 +55,7 @@ int main() {
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
+    glfwSetFramebufferSizeCallback(window, framebufferCallback);  
     // Use glad to load OpenGL
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr <<"Failed to initialize GLAD\n";

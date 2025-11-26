@@ -10,8 +10,9 @@ Renderer::Renderer(Shader& shader)
 void Renderer::render()
 {
     shader.use();
-    
-    shader.setVec2("resolution", 800.0f, 600.0f);
+    int w, h;
+    glfwGetFramebufferSize(glfwGetCurrentContext(), &w, &h);    
+    shader.setVec2("resolution", (float)w, float(h));
     
     glm::vec3 forwrd = camera.getForward();
     glm::vec3 right = camera.getRight();
