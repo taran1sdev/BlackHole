@@ -9,19 +9,20 @@ uniform vec3 camForward;
 uniform vec3 camRight;
 uniform vec3 camUp;
 
-float sphereSDF(vec3 p, float r) {
-    return length(p) - r;
-}
-
+struct Sphere {
+    vec3 center;
+    float radius;
+    vec3 colour;
+};
 
 // Function to detect collisions
-bool raySphere(vec3 rayOrigin, vec3 rayDirection, vec3 center, float radius, out float t) {
+bool raySphere(vec3 rayOrigin, vec3 rayDirection, Sphere s, out float t) {
     // get the difference between the ray origin and center of the sphere
-    vec3 originCenter = rayOrigin - center;
+    vec3 originCenter = rayOrigin - s.center;
     // b = dot product of vectors rayOrigin and rayDirection
     float b = dot(originCenter, rayDirection);
     // c = vector rayOrigin^2 - radius^2
-    float c = dot(originCenter, originCenter) - radius*radius;
+    float c = dot(originCenter, originCenter) - s.radius * s.radius;
     // h = quadratic discriminant
     float h = b*b - c;
     // if h < 0 then no solutions or no hit
@@ -64,6 +65,21 @@ vec3 gridColour(vec3 pos)
 
 void main() 
 {
+    Sphere blackHole;
+    blackHole.center = vec3(0.0, 2.5, 0.0);
+    blackHole.radius = 1.0;
+    blackHole.colour = vec3(1.0, 0.1, 0.1);
+
+    Sphere star;
+    star.center = vec3(16.0, 2.0, -13.0);
+    star.radius = 1.0;
+    star.colour = vec3(1.0, 0.9, 0.2);
+
+    Sphere planet;
+    planet.center = vec3(12.0, 2.0, -4.0);
+    planet.radius = 0.6;
+    planet.colour = vec3(0.2, 0.4, 1.0);
+
     // pixel coordinates (0 to 1)
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     
@@ -73,30 +89,44 @@ void main()
             camForward + uv.x * camRight + uv.y * camUp 
     );
     
-    vec3 blackHolePos = vec3(0.0, 1.5, 0.0);
-    float blackHoleRadius = 1.0;
-
-    float tSphere;
-    bool hitSphere = raySphere(rayOrigin, rayDirection, blackHolePos, blackHoleRadius, tSphere);
-
     float tPlane;
-    bool hitPlane = rayPlane(rayOrigin, rayDirection, vec3(1.0, 1.0, 1.0).yxx, -1.0, tPlane);
+    bool hitPlane = rayPlane(rayOrigin, rayDirection, vec3(0.0, 1.0, 0.0), -1.0, tPlane);
 
-    float t = 1e9;
+    float closest = 1e9;
     vec3 colour = vec3(0.0);
+    vec3 hitPoint;
+    vec3 normal;
     
-    if (hitSphere && tSphere < t) {
-        t = tSphere;
-        vec3 hitPoint = rayOrigin + rayDirection * tSphere;
-        vec3 normal = normalize(hitPoint - blackHolePos);
+    float t1;
+    if (raySphere(rayOrigin, rayDirection, blackHole, t1) && t1 < closest) {
+        closest = t1;
+        hitPoint = rayOrigin + rayDirection * t1;
+        normal = normalize(hitPoint - blackHole.center);
         float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
-        colour = vec3(diff, 0.0, 0.0);
+        colour = blackHole.colour * diff;
     }
 
-    if (hitPlane && tPlane < t) {
-        t = tPlane;
-        vec3 hitPoint = rayOrigin + rayDirection * tPlane;
-        colour = gridColour(hitPoint);
+    float t2;
+    if (raySphere(rayOrigin, rayDirection, star, t2) && t2 < closest) {
+        closest = t2;
+        hitPoint = rayOrigin + rayDirection * t2;
+        normal = normalize(hitPoint - star.center);
+        float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
+        colour = star.colour * diff;
+    }
+
+    float t3;
+    if (raySphere(rayOrigin, rayDirection, planet, t3) && t3 < closest) {
+        closest = t3;
+        hitPoint = rayOrigin + rayDirection * t3;
+        normal = normalize(hitPoint - planet.center);
+        float diff = max(dot(normal, normalize(vec3(1,1,-1))), 0.0);
+        colour = planet.colour * diff;
+    }
+    
+    if (hitPlane && tPlane < closest) {
+        closest = tPlane;
+        colour = gridColour(rayOrigin + rayDirection * tPlane);
     }
 
     FragColor = vec4(colour, 1.0);
