@@ -15,211 +15,215 @@ struct Sphere {
     vec3 colour;
 };
 
-// Function to detect collisions
-bool raySphere(vec3 rayOrigin, vec3 rayDirection, Sphere s, out float t) {
-    // get the difference between the ray origin and center of the sphere
-    vec3 originCenter = rayOrigin - s.center;
-    // b = dot product of vectors rayOrigin and rayDirection
-    float b = dot(originCenter, rayDirection);
-    // c = vector rayOrigin^2 - radius^2
-    float c = dot(originCenter, originCenter) - s.radius * s.radius;
-    // h = quadratic discriminant
-    float h = b*b - c;
-    // if h < 0 then no solutions or no hit
-    if (h < 0.0) return false;
-    
-    // calculate the distance to the hit
-    t = -b - sqrt(h);
-    // if the hit is in front of the camera return true
-    if (t < 0.0) t = -b + h;
-    return t > 0.0;
-}
-
-// Functions to create a grid effect on the floor
-
-// detect collisions with our floor
-bool rayPlane(vec3 rayOrigin, vec3 rayDirection, vec3 planeNormal, float planeY, out float t) 
+float hash(vec2 p)
 {
-    float denom = dot(rayDirection, planeNormal);
-    // Return false if ray is parallel to plane
+    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+}
+
+bool rayPlane(vec3 ro, vec3 rd, vec3 n, float h, out float t)
+{
+    float denom = dot(rd, n);
     if (abs(denom) < 0.0001) return false;
-   
-    // calculate distance 
-    t = (planeY - dot(rayOrigin, planeNormal)) / denom;
+    t = (h - dot(ro, n)) / denom;
     return t > 0.0;
 }
 
-// Decide to return lighter grid line or black background
-vec3 gridColour(vec3 pos)
+vec3 gridColour(vec3 p)
 {
     float scale = 1.0;
+    bool line =
+        abs(fract(p.x * scale) - 0.5) < 0.01 ||
+        abs(fract(p.z * scale) - 0.5) < 0.01;
 
-    bool grid = abs(fract(pos.x * scale) - 0.5) < 0.01 ||
-                 abs(fract(pos.z * scale) - 0.5) < 0.01;
-    
-    // light lines
-    if (grid) return vec3(0.3);
-    
-    // Darker ground
-    return vec3(0.0);
+    return line ? vec3(0.3) : vec3(0.0);
 }
 
-// Rotation matrix - Rodrigues' formula
-mat3 rotationMatrix(vec3 axis, float angle)
+bool hitSphere(vec3 pos, Sphere s)
 {
-    axis = normalize(axis);
-    float c = cos(angle);
-    float s = sin(angle);
-    float oc = 1.0 - c;
-
-    return mat3(
-        oc*axis.x*axis.x + c, oc*axis.x*axis.y - axis.z*s, oc*axis.x*axis.z + axis.y*s,
-        oc*axis.y*axis.x + axis.z*s, oc*axis.y*axis.y + c, oc*axis.y*axis.z - axis.x*s,
-        oc*axis.z*axis.x - axis.y*s, oc*axis.z*axis.y + axis.x*s, oc*axis.z*axis.z + c
-    );
+    return length(pos - s.center) < s.radius;
 }
 
-// Gravitational lensing (approximate)
-vec3 bendRay(vec3 rayOrigin, vec3 rayDirection, vec3 bCenter)
+const float DISK_INNER = 2.0; 
+const float DISK_OUTER = 9.0;
+const float DISK_HALF_H = 0.15;
+
+bool hitDisk(vec3 pos, vec3 bhCenter)
 {
-    vec3 ro = rayOrigin - bCenter;
-    vec3 rd = normalize(rayDirection);
+    vec3 p = pos - bhCenter;
 
-    // calculate the impact parameter
-    float b = length(cross(ro, rd));
+    if (abs(p.y) > DISK_HALF_H) return false;
 
-    // if it's far away, no bend
-    if (b > 10.0) return rd;
-
-    // k determines the strength of the lensing effect
-    float k = 0.6;
-    // calculate the angle of the bend
-    float alpha = k / max(b, 0.001);
-    
-    // calculate the direction towards the black hole
-    vec3 toB = normalize(-ro);
-    // calculate the rotational axis
-    vec3 axis = normalize(cross(rd, toB));
-
-    // if ray is headed towards the black hole, no bend
-    if (length(axis) < 0.0001) return rd;
-
-    // Apply the rotation matrix, normalize and return the new direction
-    mat3 R = rotationMatrix(axis, alpha);
-    return normalize(R * rd);
+    float r = length(p.xz);
+    return (r > DISK_INNER && r < DISK_OUTER);
 }
 
-// accretion disk as a band in space
-vec3 accretionDiskColour(vec3 dir) 
+vec3 shadeDisk(vec3 pos, vec3 bhCenter, vec3 rayDir)
 {
-    dir = normalize(dir);
+    vec3 p = pos - bhCenter;
+    float r = length(p.xz);
+    float h = abs(p.y);
 
-    // band around the equator
-    float bandWidth = 0.08;
-    float v = 1.0 - smoothstep(0.0, bandWidth, abs(dir.y));
-    
-    // create colour variation along the band
-    float ang = atan(dir.z, dir.x);
-    float t = 0.5 + 0.5 * cos(ang);
+    float tRad = smoothstep(DISK_INNER, DISK_OUTER * 0.6, r);
 
-    vec3 innerColour = vec3(1.2, 0.5, 0.1);
-    vec3 outerColour = vec3(1.0, 0.9, 0.3);
+    // base colour gradient
+    vec3 inner = vec3(3.0, 2.3, 1.0);
+    vec3 outer = vec3(1.3, 0.5, 0.1);
+    vec3 col   = mix(inner, outer, tRad);
 
-    vec3 col = mix(innerColour, outerColour, t);
+    // vertical brightness
+    float tH = smoothstep(0.0, DISK_HALF_H, h);
+    col *= 1.0 + tH * 2.0;
 
-    // create radial falloff 
-    float r = sqrt(dir.x * dir.x + dir.z * dir.z);
-    float falloff = smoothstep(0.3, 1.0, r);
+    // turbulence / clumpiness
+    float n1 = hash(p.xz * 6.0);
+    float n2 = hash(p.xz * 0.9 + 10.0);
+    float turb = mix(n1, n2, 0.5);
+    col *= mix(0.7, 1.6, turb);
 
-    return col * v * falloff;
+    // approximate Doppler beaming
+    vec3 tangent = normalize(vec3(-p.z, 0.0, p.x)); // orbital direction
+    float dop = dot(-rayDir, tangent);
+    float boost = 1.0 + 1.8 * max(dop, 0.0);
+    float dim   = 1.0 - 0.8 * max(-dop, 0.0);
+    col *= mix(dim, boost, 0.9);
+
+    return col;
 }
 
-void main() 
+vec3 traceGeodesic(vec3 ro, vec3 rd, Sphere blackHole, Sphere star, Sphere planet, out bool hitSomething)
 {
-    // pixel coordinates (0 to 1)
+    hitSomething = false;
+    vec3 colour = vec3(0.0);
+
+    vec3 bhCenter = blackHole.center;
+    float eventR  = blackHole.radius; 
+
+    const int   STEPS     = 480;
+    const float BASE_STEP = 0.18;
+    const float G_STRENGTH = 0.8;
+    const float MAX_R     = 80.0;
+
+    vec3 pos = ro;
+    vec3 dir = normalize(rd);
+
+    for (int i = 0; i < STEPS; i++)
+    {
+        vec3 rel = pos - bhCenter;
+        float r  = length(rel);
+
+        // fell into the black hole
+        if (r < eventR)
+        {
+            colour = vec3(0.0);
+            hitSomething = true;
+            break;
+        }
+
+        // star / planet hits
+        if (hitSphere(pos, star))
+        {
+            vec3 n = normalize(pos - star.center);
+            float diff = max(dot(n, normalize(vec3(1,1,-1))), 0.0);
+            colour = star.colour * diff;
+            hitSomething = true;
+            break;
+        }
+
+        if (hitSphere(pos, planet))
+        {
+            vec3 n = normalize(pos - planet.center);
+            float diff = max(dot(n, normalize(vec3(1,1,-1))), 0.0);
+            colour = planet.colour * diff;
+            hitSomething = true;
+            break;
+        }
+
+        // accretion disk
+        if (hitDisk(pos, bhCenter))
+        {
+            colour = shadeDisk(pos, bhCenter, dir);
+            hitSomething = true;
+            break;
+        }
+
+        if (r > MAX_R)
+        {
+            float v = clamp((r - MAX_R) * 0.02, 0.0, 1.0);
+            colour = mix(vec3(0.02, 0.0, 0.03), vec3(0.08, 0.01, 0.03), v);
+            break;
+        }
+
+        vec3 n = normalize(rel);
+
+        vec3 tangential = dir - n * dot(dir, n);
+
+        float invr2 = 1.0 / max(r * r, 0.001);
+        dir += -G_STRENGTH * invr2 * tangential;
+        dir = normalize(dir);
+
+        float step = BASE_STEP * mix(0.4, 2.0, clamp((r - eventR) / 10.0, 0.0, 1.0));
+        pos += dir * step;
+    }
+
+    return colour;
+}
+
+void main()
+{
+    // Screen coordinates
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     uv.x *= resolution.x / resolution.y;
 
-    // trace rays from camera
-    vec3 rayOrigin = camPos; 
-    vec3 rayDirection = normalize(
-            camForward + uv.x * camRight + uv.y * camUp 
-    );
+    vec3 ro = camPos;
+    vec3 rd = normalize(camForward + uv.x * camRight + uv.y * camUp);
 
-    Sphere blackHole;
-    blackHole.center = vec3(0.0, 2.5, 0.0);
-    blackHole.radius = 1.0;
-    blackHole.colour = vec3(1); 
-    float eventRadius = blackHole.radius;
-    float photonRadius = 1.7;
-    float ringWidth = 0.06;
+    Sphere blackHole = Sphere(vec3(0.0, 2.5, 0.0), 1.0, vec3(0.0));
+    Sphere star      = Sphere(vec3(16.0, 5.0,-13.0), 6.0, vec3(1.0,0.9,0.2));
+    Sphere planet    = Sphere(vec3(12.0, 4.0, 15.0), 4.6, vec3(0.2,0.4,1.0));
 
-    Sphere star;
-    star.center = vec3(16.0, 2.0, -13.0);
-    star.radius = 1.0;
-    star.colour = vec3(1.0, 0.9, 0.2);
+    bool hitSomething = false;
+    vec3 colour = traceGeodesic(ro, rd, blackHole, star, planet, hitSomething);
 
-    Sphere planet;
-    planet.center = vec3(12.0, 2.0, 15);
-    planet.radius = 0.6;
-    planet.colour = vec3(0.2, 0.4, 1.0);
-
-    
-    // apply the gravity lens effect
-    vec3 lensedDir = bendRay(rayOrigin, rayDirection, blackHole.center);
-    vec3 finalColour = vec3(0.0);
-    
-    finalColour += accretionDiskColour(lensedDir) * 1.0;
-
-    // floor grid
-    float tPlane;
-    if (rayPlane(rayOrigin, rayDirection, vec3(0.0, 1.0, 0.0), -1.0, tPlane)) 
+    if (!hitSomething)
     {
-        finalColour += gridColour(rayOrigin * lensedDir * tPlane);
-    }
-    
-    // ray sphere collisions
-    float closest = 1e9;
-    float tHit;
-    vec3 hitCol;
-
-    if (raySphere(rayOrigin, lensedDir, star, tHit) && tHit < closest) 
-    {
-        closest = tHit;
-        vec3 p = rayOrigin + lensedDir * tHit;
-        vec3 n = normalize(p = star.center);
-        float diff = max(dot(n, normalize(vec3(1,1,-1))), 0);
-        hitCol = star.colour * diff;
+        float tFloor;
+        if (rayPlane(ro, rd, vec3(0,1,0), -1.0, tFloor))
+        {
+            vec3 p = ro + rd * tFloor;
+            colour = gridColour(p) * 0.7;
+        }
+        else
+        {
+            // empty space
+            colour = vec3(0.01, 0.0, 0.02);
+        }
     }
 
-    if (raySphere(rayOrigin, lensedDir, planet, tHit) && tHit < closest)
+    //Event horizon and photon ring
+    vec3 bhCenter = blackHole.center;
+
+    vec3 toBH = normalize(bhCenter - ro);
+    float facing = dot(rd, toBH);
+
+    if (facing > 0.0)
     {
-        closest = tHit;
-        vec3 p = rayOrigin + lensedDir * tHit;
-        vec3 n = normalize(p - planet.center);
-        float diff = max(dot(n, normalize(vec3(1,1,-1))), 0);
-        hitCol = planet.colour * diff;
+        float eventR  = blackHole.radius;
+        float photonR = 1.7;
+        float ringW   = 0.06;
+
+        float b = length(cross(ro - bhCenter, rd));
+
+        float horizonMask =
+            smoothstep(eventR + 0.02, eventR - 0.02, b);
+        colour = mix(colour, vec3(0.0), horizonMask);
+
+        float ringMask =
+            smoothstep(photonR + ringW, photonR, b) *
+            smoothstep(photonR - ringW, photonR, b);
+
+        colour += vec3(1.2, 0.4, 0.1) * ringMask * 2.2;
     }
 
-    if (closest < 1e9) finalColour = mix(finalColour, hitCol, 1.0);
-
-    // black hole & photon ring
-    vec3 roBH = rayOrigin - blackHole.center;
-    float b = length(cross(roBH, rayDirection));
-   
-    float holeMask = smoothstep(eventRadius + 0.02, eventRadius - 0.02, b);
-    finalColour = mix(finalColour, vec3(0.0), holeMask);
-
-    float ringMask = 
-        smoothstep(photonRadius + ringWidth, photonRadius, b) *
-        smoothstep(photonRadius - ringWidth, photonRadius, b);
-
-    vec3 ringColour = vec3(1.2, 0.4, 0.1);
-    finalColour += ringColour * ringMask * 2.0;
-
-    //float r2 = dot(uv, uv);
-    //float vignette = smoothstep(1.4, 0.2, r2);
-    //finalColour *= vignette;
-
-    FragColour = vec4(finalColour, 1.0);
+    FragColour = vec4(colour, 1.0);
 }
+
