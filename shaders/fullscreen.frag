@@ -63,6 +63,51 @@ vec3 gridColour(vec3 pos)
     return vec3(0.0);
 }
 
+// Rotation matrix - Rodrigues' formula
+mat3 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float c = cos(angle);
+    float s = sin(angle);
+    float oc = 1.0 - c;
+
+    return mat3(
+        oc*axis.x*axis.x + c, oc*axis.x*axis.y - axis.z*s, oc*axis.x*axis.z + axis.y*s,
+        oc*axis.y*axis.x + axis.z*s, oc*axis.y*axis.y + c, oc*axis.y*axis.z - axis.x*s,
+        oc*axis.z*axis.x - axis.y*s, oc*axis.z*axis.y + axis.x*s, oc*axis.z*axis.z + c
+    );
+}
+
+// Gravitational lensing (approximate)
+vec3 bendRay(vec3 rayOrigin, vec3 rayDirection, vec3 bCenter)
+{
+    vec3 ro = rayOrigin - bCenter;
+    vec3 rd = normalize(rayDirection);
+
+    // calculate the impact parameter
+    float b = length(cross(ro, rd));
+
+    // if it's far away, no bend
+    if (b > 10.0) return rd;
+
+    // k determines the strength of the lensing effect
+    float k = 0.5;
+    // calculate the angle of the bend
+    float alpha = k / max(b, 0.001);
+    
+    // calculate the direction towards the black hole
+    vec3 toB = normalize(-ro);
+    // calculate the rotational axis
+    vec3 axis = normalize(cross(rd, toB));
+
+    // if ray is headed towards the black hole, no bend
+    if (length(axis) < 0.0001) return rd;
+
+    // Apply the rotation matrix, normalize and return the new direction
+    mat3 R = rotationMatrix(axis, alpha);
+    return normalize(R * rd);
+}
+
 void main() 
 {
     Sphere blackHole;
@@ -76,7 +121,7 @@ void main()
     star.colour = vec3(1.0, 0.9, 0.2);
 
     Sphere planet;
-    planet.center = vec3(12.0, 2.0, -4.0);
+    planet.center = vec3(12.0, 2.0, 15);
     planet.radius = 0.6;
     planet.colour = vec3(0.2, 0.4, 1.0);
 
@@ -88,7 +133,10 @@ void main()
     vec3 rayDirection = normalize(
             camForward + uv.x * camRight + uv.y * camUp 
     );
-    
+   
+    // apply lensing effect
+    rayDirection = bendRay(rayOrigin, rayDirection, blackHole.center);
+
     float tPlane;
     bool hitPlane = rayPlane(rayOrigin, rayDirection, vec3(0.0, 1.0, 0.0), -1.0, tPlane);
 
