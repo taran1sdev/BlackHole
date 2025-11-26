@@ -1,5 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/blackhole.dir/link.d"
+  "CMakeFiles/blackhole.dir/src/Camera.cpp.o"
+  "CMakeFiles/blackhole.dir/src/Camera.cpp.o.d"
   "CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o"
   "CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o.d"
   "CMakeFiles/blackhole.dir/src/Renderer.cpp.o"

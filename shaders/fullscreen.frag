@@ -4,6 +4,11 @@ out vec4 FragColor;
 
 uniform vec2 resolution;
 
+uniform vec3 camPos;
+uniform vec3 camForward;
+uniform vec3 camRight;
+uniform vec3 camUp;
+
 float sphereSDF(vec3 p, float r) {
     return length(p) - r;
 }
@@ -32,8 +37,10 @@ void main()
     vec2 uv = (gl_FragCoord.xy / resolution) * 2.0 - 1.0;
     
     // trace rays from camera
-    vec3 rayOrigin = vec3(0.0, 0.0, 2.0);
-    vec3 rayDirection = normalize(vec3(uv, -1.0));
+    vec3 rayOrigin = camPos; 
+    vec3 rayDirection = normalize(
+            camForward + uv.x * camRight + uv.y * camUp 
+    );
     
     float t;
     if (raySphere(rayOrigin, rayDirection, 1.0, t)) {

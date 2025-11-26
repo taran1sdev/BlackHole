@@ -46,6 +46,11 @@ void Shader::setVec2(const std::string& name, float x, float y) const {
     glUniform2f(location, x, y);
 }
 
+void Shader::setVec3(const std::string& name, const glm::vec3& value) const {
+    int loc = glGetUniformLocation(ID, name.c_str());
+    glUniform3f(loc, value.x, value.y, value.z);
+}
+
 // Helper function to load file from path
 std::string Shader::loadFile(const std::string& path) const {
     std::ifstream file(path);

@@ -4,8 +4,28 @@
 
 #include "Shader.h"
 #include "Renderer.h"
+#include "Camera.h"
 
-// First let's just try and render a window
+Camera camera;
+float lastX = 400, lastY = 300;
+bool firstMouse = true;
+
+// We register this callback function with GLFW to process the mouse position
+void mouseCallback(GLFWwindow* window, double x, double y) {
+    if (firstMouse) {
+        lastX = x;
+        lastY = y;
+        firstMouse = false;
+    }
+
+    float xOffset = x - lastX;
+    float yOffset = lastY - y;
+
+    lastX = x;
+    lastY = y;
+
+    camera.getMouse(xOffset, yOffset);
+}
 
 int main() {
     if (!glfwInit()) {
@@ -25,6 +45,10 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+    
+    // Register callback for mouse 
+    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Use glad to load OpenGL
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {

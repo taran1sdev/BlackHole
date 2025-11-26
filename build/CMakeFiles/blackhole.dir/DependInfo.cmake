@@ -8,6 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/taran1s/cloud/LowLevel/BlackHole/src/Camera.cpp" "CMakeFiles/blackhole.dir/src/Camera.cpp.o" "gcc" "CMakeFiles/blackhole.dir/src/Camera.cpp.o.d"
   "/home/taran1s/cloud/LowLevel/BlackHole/src/FullscreenQuad.cpp" "CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o" "gcc" "CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o.d"
   "/home/taran1s/cloud/LowLevel/BlackHole/src/Renderer.cpp" "CMakeFiles/blackhole.dir/src/Renderer.cpp.o" "gcc" "CMakeFiles/blackhole.dir/src/Renderer.cpp.o.d"
   "/home/taran1s/cloud/LowLevel/BlackHole/src/Shader.cpp" "CMakeFiles/blackhole.dir/src/Shader.cpp.o" "gcc" "CMakeFiles/blackhole.dir/src/Shader.cpp.o.d"

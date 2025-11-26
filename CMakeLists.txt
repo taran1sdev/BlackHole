@@ -9,12 +9,9 @@ find_package(glfw3 REQUIRED)
 add_library(glad external/glad/src/glad.c)
 target_include_directories(glad PUBLIC external/glad/include)
 
-add_executable(blackhole 
-    src/main.cpp
-    src/Shader.cpp
-    src/FullscreenQuad.cpp
-    src/Renderer.cpp
-)
+file(GLOB SRC_FILES "src/*.cpp")
+
+add_executable(blackhole ${SRC_FILES})
 
 target_link_libraries(blackhole
     glad
