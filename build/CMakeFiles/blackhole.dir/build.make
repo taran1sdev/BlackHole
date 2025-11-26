@@ -86,21 +86,69 @@ CMakeFiles/blackhole.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/blackhole.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/taran1s/cloud/LowLevel/BlackHole/src/main.cpp -o CMakeFiles/blackhole.dir/src/main.cpp.s
 
+CMakeFiles/blackhole.dir/src/Shader.cpp.o: CMakeFiles/blackhole.dir/flags.make
+CMakeFiles/blackhole.dir/src/Shader.cpp.o: /home/taran1s/cloud/LowLevel/BlackHole/src/Shader.cpp
+CMakeFiles/blackhole.dir/src/Shader.cpp.o: CMakeFiles/blackhole.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/blackhole.dir/src/Shader.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/blackhole.dir/src/Shader.cpp.o -MF CMakeFiles/blackhole.dir/src/Shader.cpp.o.d -o CMakeFiles/blackhole.dir/src/Shader.cpp.o -c /home/taran1s/cloud/LowLevel/BlackHole/src/Shader.cpp
+
+CMakeFiles/blackhole.dir/src/Shader.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/blackhole.dir/src/Shader.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/taran1s/cloud/LowLevel/BlackHole/src/Shader.cpp > CMakeFiles/blackhole.dir/src/Shader.cpp.i
+
+CMakeFiles/blackhole.dir/src/Shader.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/blackhole.dir/src/Shader.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/taran1s/cloud/LowLevel/BlackHole/src/Shader.cpp -o CMakeFiles/blackhole.dir/src/Shader.cpp.s
+
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o: CMakeFiles/blackhole.dir/flags.make
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o: /home/taran1s/cloud/LowLevel/BlackHole/src/FullscreenQuad.cpp
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o: CMakeFiles/blackhole.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o -MF CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o.d -o CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o -c /home/taran1s/cloud/LowLevel/BlackHole/src/FullscreenQuad.cpp
+
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/taran1s/cloud/LowLevel/BlackHole/src/FullscreenQuad.cpp > CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.i
+
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/taran1s/cloud/LowLevel/BlackHole/src/FullscreenQuad.cpp -o CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.s
+
+CMakeFiles/blackhole.dir/src/Renderer.cpp.o: CMakeFiles/blackhole.dir/flags.make
+CMakeFiles/blackhole.dir/src/Renderer.cpp.o: /home/taran1s/cloud/LowLevel/BlackHole/src/Renderer.cpp
+CMakeFiles/blackhole.dir/src/Renderer.cpp.o: CMakeFiles/blackhole.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/blackhole.dir/src/Renderer.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/blackhole.dir/src/Renderer.cpp.o -MF CMakeFiles/blackhole.dir/src/Renderer.cpp.o.d -o CMakeFiles/blackhole.dir/src/Renderer.cpp.o -c /home/taran1s/cloud/LowLevel/BlackHole/src/Renderer.cpp
+
+CMakeFiles/blackhole.dir/src/Renderer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/blackhole.dir/src/Renderer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/taran1s/cloud/LowLevel/BlackHole/src/Renderer.cpp > CMakeFiles/blackhole.dir/src/Renderer.cpp.i
+
+CMakeFiles/blackhole.dir/src/Renderer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/blackhole.dir/src/Renderer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/taran1s/cloud/LowLevel/BlackHole/src/Renderer.cpp -o CMakeFiles/blackhole.dir/src/Renderer.cpp.s
+
 # Object files for target blackhole
 blackhole_OBJECTS = \
-"CMakeFiles/blackhole.dir/src/main.cpp.o"
+"CMakeFiles/blackhole.dir/src/main.cpp.o" \
+"CMakeFiles/blackhole.dir/src/Shader.cpp.o" \
+"CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o" \
+"CMakeFiles/blackhole.dir/src/Renderer.cpp.o"
 
 # External object files for target blackhole
 blackhole_EXTERNAL_OBJECTS =
 
 blackhole: CMakeFiles/blackhole.dir/src/main.cpp.o
+blackhole: CMakeFiles/blackhole.dir/src/Shader.cpp.o
+blackhole: CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o
+blackhole: CMakeFiles/blackhole.dir/src/Renderer.cpp.o
 blackhole: CMakeFiles/blackhole.dir/build.make
 blackhole: CMakeFiles/blackhole.dir/compiler_depend.ts
 blackhole: libglad.a
 blackhole: /usr/lib/libglfw.so.3.4
 blackhole: /usr/lib/libGL.so
 blackhole: CMakeFiles/blackhole.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable blackhole"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable blackhole"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/blackhole.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

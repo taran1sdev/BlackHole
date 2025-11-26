@@ -3,6 +3,9 @@ blackhole: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/crti.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o \
   CMakeFiles/blackhole.dir/src/main.cpp.o \
+  CMakeFiles/blackhole.dir/src/Shader.cpp.o \
+  CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o \
+  CMakeFiles/blackhole.dir/src/Renderer.cpp.o \
   libglad.a \
   /usr/lib/libglfw.so.3.4 \
   /usr/lib/libGL.so \
@@ -47,6 +50,12 @@ blackhole: \
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o:
 
 CMakeFiles/blackhole.dir/src/main.cpp.o:
+
+CMakeFiles/blackhole.dir/src/Shader.cpp.o:
+
+CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o:
+
+CMakeFiles/blackhole.dir/src/Renderer.cpp.o:
 
 libglad.a:
 

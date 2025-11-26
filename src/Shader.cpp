@@ -1,0 +1,76 @@
+#include "Shader.h"
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
+Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
+{
+    // Load the shader files
+    std::string vertexSrc = loadFile(vertexPath);
+    std::string fragmentSrc = loadFile(fragmentPath);
+    
+    // Attempt to compile the loaded files
+    unsigned int vertex = compileShader(GL_VERTEX_SHADER, vertexSrc);
+    unsigned int fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSrc);
+    
+    // Create the program and link the shaders 
+    ID = glCreateProgram();
+    glAttachShader(ID, vertex);
+    glAttachShader(ID, fragment);
+    glLinkProgram(ID);
+
+    int success;
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(ID, 512, nullptr, infoLog);
+        std::cerr << "Failed to link shader:\n" << infoLog << std::endl;
+    }
+
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+}
+
+// Implement our public functions 
+void Shader::use() const {
+   glUseProgram(ID); 
+}
+
+void Shader::destroy() {
+   glDeleteProgram(ID);   
+}
+
+// Helper function to load file from path
+std::string Shader::loadFile(const std::string& path) const {
+    std::ifstream file(path);
+    std::stringstream buf;
+    buf << file.rdbuf();
+    return buf.str();
+}
+
+// Helper function to compile contents loaded from file
+unsigned int Shader::compileShader(unsigned int type, const std::string& code) const {
+    unsigned int shader = glCreateShader(type);
+    const char* src = code.c_str();
+
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    int success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cerr << "Shader compilation failed:\n" << infoLog << std::endl;
+    }
+    
+    return shader;
+}
+
+
+
+
+
+

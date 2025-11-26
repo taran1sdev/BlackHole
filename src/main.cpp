@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include "Shader.h"
+#include "Renderer.h"
+
 // First let's just try and render a window
 
 int main() {
@@ -28,15 +31,20 @@ int main() {
         std::cerr <<"Failed to initialize GLAD\n";
         return -1;
     }
+    
+    Shader shader("../shaders/fullscreen.vert", "../shaders/fullscreen.frag");
+    Renderer renderer(shader);
 
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // Black background
         glClear(GL_COLOR_BUFFER_BIT);
         
+        renderer.render();
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
+    
+    shader.destroy();
     glfwTerminate();
     return 0;
 }
