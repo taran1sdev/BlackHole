@@ -7,7 +7,7 @@
 #include "Camera.h"
 
 Camera camera;
-float lastX = 400, lastY = 300;
+float lastX = 400, lastY = 300, deltaTime = 0.0f, lastFrame = 0.0f;
 bool firstMouse = true;
 
 // We register this callback function with GLFW to process the mouse position
@@ -49,7 +49,7 @@ int main() {
     // Register callback for mouse 
     glfwSetCursorPosCallback(window, mouseCallback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+    
     // Use glad to load OpenGL
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr <<"Failed to initialize GLAD\n";
@@ -62,6 +62,14 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
         
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        
+        // Check every frame for pressed key - using a callback doesn't allow keys
+        // to be held and results in choppy movements
+        camera.getKeys(window, deltaTime);
+
         renderer.render();
 
         glfwSwapBuffers(window);

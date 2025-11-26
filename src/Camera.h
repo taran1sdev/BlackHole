@@ -1,6 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
-
+#include <GLFW/glfw3.h>
 class Camera {
     public:
         glm::vec3 position;
@@ -14,4 +14,5 @@ class Camera {
         glm::vec3 getUp() const;
 
         void getMouse(float x, float y);
+        void getKeys(GLFWwindow* window, float deltaTime);
 };

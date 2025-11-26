@@ -36,3 +36,23 @@ void Camera::getMouse(float x, float y) {
     if (pitch > 89.0f) pitch = 89.0f;
     if (pitch < -89.0f) pitch = -89.0f;
 }
+
+void Camera::getKeys(GLFWwindow* window, float deltaTime)
+{
+    float speed = 2.0f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        position += getForward() * speed;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        position -= getForward() * speed;
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        position += getRight() * speed;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        position -= getRight() * speed;
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        position.y += speed;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        position.y -= speed;
+}
