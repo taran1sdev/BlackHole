@@ -3,7 +3,7 @@
 
 Camera::Camera()
 {
-    position = glm::vec3(0.0f, 0.0f, 2.0f);
+    position = glm::vec3(0.0f, 0.0f, 3.0f);
     yaw = -99.0f;
     pitch = 0.0f;
 }
