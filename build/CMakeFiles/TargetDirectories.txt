@@ -1,0 +1,4 @@
+/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles/glad.dir
+/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles/blackhole.dir
+/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles/edit_cache.dir
+/home/taran1s/cloud/LowLevel/BlackHole/build/CMakeFiles/rebuild_cache.dir
