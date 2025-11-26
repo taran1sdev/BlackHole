@@ -41,6 +41,11 @@ void Shader::destroy() {
    glDeleteProgram(ID);   
 }
 
+void Shader::setVec2(const std::string& name, float x, float y) const {
+    int location = glGetUniformLocation(ID, name.c_str());
+    glUniform2f(location, x, y);
+}
+
 // Helper function to load file from path
 std::string Shader::loadFile(const std::string& path) const {
     std::ifstream file(path);
@@ -68,7 +73,6 @@ unsigned int Shader::compileShader(unsigned int type, const std::string& code) c
     
     return shader;
 }
-
 
 
 

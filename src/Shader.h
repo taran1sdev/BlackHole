@@ -11,6 +11,9 @@ class Shader {
         unsigned int ID;
 
         Shader(const std::string& vertexPath, const std::string& fragmentPath);
+       
+        // function to set uniform 
+        void setVec2(const std::string& name, float x, float y) const;
 
         void use() const;
 

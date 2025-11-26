@@ -110,4 +110,4 @@ CMakeFiles/blackhole.dir/src/Renderer.cpp.o: \
  /usr/include/c++/15.2.1/cstddef \
  /usr/include/c++/15.2.1/bits/uses_allocator.h \
  /usr/include/c++/15.2.1/bits/uses_allocator_args.h \
- /usr/include/c++/15.2.1/tuple
+ /usr/include/c++/15.2.1/tuple /usr/include/GLFW/glfw3.h
