@@ -149,7 +149,12 @@ CMakeFiles/blackhole.dir/src/main.cpp.o: \
  /usr/include/c++/15.2.1/bits/locale_facets.tcc \
  /usr/include/c++/15.2.1/bits/basic_ios.tcc \
  /usr/include/c++/15.2.1/bits/ostream.tcc /usr/include/c++/15.2.1/istream \
- /usr/include/c++/15.2.1/bits/istream.tcc \
+ /usr/include/c++/15.2.1/bits/istream.tcc /usr/include/c++/15.2.1/fstream \
+ /usr/include/c++/15.2.1/bits/codecvt.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/basic_file.h \
+ /usr/include/c++/15.2.1/x86_64-pc-linux-gnu/bits/c++io.h \
+ /usr/include/c++/15.2.1/bits/fstream.tcc /usr/include/c++/15.2.1/sstream \
+ /usr/include/c++/15.2.1/bits/sstream.tcc \
  /home/taran1s/cloud/LowLevel/BlackHole/src/Shader.h \
  /usr/include/glm/glm.hpp /usr/include/glm/detail/_fixes.hpp \
  /usr/include/c++/15.2.1/cmath /usr/include/math.h \

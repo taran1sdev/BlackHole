@@ -3,26 +3,37 @@
 
 Camera::Camera()
 {
-    position = glm::vec3(0.0f, 0.0f, 3.0f);
+    position = glm::vec3(0.0f, 0.0f, 10.0f);
     yaw = -90.0f;
     pitch = 0.0f;
 }
 
 glm::vec3 Camera::getForward() const {
-    float cosPitch = cos(glm::radians(pitch));
-    float sinPitch = sin(glm::radians(pitch));
-    float cosYaw = cos(glm::radians(yaw));
-    float sinYaw = sin(glm::radians(yaw));
+    float cy = cos(glm::radians(yaw));
+    float sy = sin(glm::radians(yaw));
+    float cp = cos(glm::radians(pitch));
+    float sp = sin(glm::radians(pitch));
 
-    return glm::normalize(glm::vec3(cosYaw * cosPitch, sinPitch, sinYaw * cosPitch)); 
+    glm::vec3 f;
+    f.x = cy * cp; 
+    f.y = sp; 
+    f.z = sy * cp;
+
+    return glm::normalize(f);
 }
 
 glm::vec3 Camera::getRight() const {
-    return glm::normalize(glm::cross(getForward(), glm::vec3(0.0, 1.0, 0.0)));
+    glm::vec3 f = getForward();
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    return glm::normalize(glm::cross(f, up));
 }
 
 glm::vec3 Camera::getUp() const {
-     return glm::normalize(glm::cross(getRight(), getForward()));
+    glm::vec3 f = getForward();
+    glm::vec3 r = getRight();
+
+    return glm::normalize(glm::cross(r, f));
 }
 
 void Camera::getMouse(float x, float y) {
@@ -40,7 +51,7 @@ void Camera::getMouse(float x, float y) {
 
 void Camera::getKeys(GLFWwindow* window, float deltaTime)
 {
-    float speed = 2.0f * deltaTime;
+    float speed = 5.0f * deltaTime;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         position += getForward() * speed;

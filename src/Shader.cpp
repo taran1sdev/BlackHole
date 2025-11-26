@@ -10,8 +10,8 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
     std::string fragmentSrc = loadFile(fragmentPath);
     
     // Attempt to compile the loaded files
-    unsigned int vertex = compileShader(GL_VERTEX_SHADER, vertexSrc);
-    unsigned int fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSrc);
+    GLuint vertex = compileShader(GL_VERTEX_SHADER, vertexSrc);
+    GLuint fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSrc);
     
     // Create the program and link the shaders 
     ID = glCreateProgram();
@@ -19,7 +19,7 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
 
-    int success;
+    GLint success;
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
 
     if (!success) {
@@ -37,8 +37,12 @@ void Shader::use() const {
    glUseProgram(ID); 
 }
 
-void Shader::destroy() {
-   glDeleteProgram(ID);   
+void Shader::setInt(const std::string& name, int value) const {
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setFloat(const std::string& name, float value) const {
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
 void Shader::setVec2(const std::string& name, float x, float y) const {

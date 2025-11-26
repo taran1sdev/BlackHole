@@ -1,0 +1,161 @@
+#version 460
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (rgba8, binding = 0) writeonly uniform image2D outImage;
+
+uniform ivec2 uResolution;
+
+uniform vec3 camPos;
+uniform vec3 camForward;
+uniform vec3 camRight;
+uniform vec3 camUp;
+
+uniform vec3 bhPos;
+uniform float bhMass;
+
+uniform float diskInner;
+uniform float diskOuter;
+
+const double c = 299792458.0;
+const double G = 6.67430e-11;
+
+// integrate photon paths using Hamiltonian formulation
+
+vec3 geodesicStep(vec3 posBH, vec3 dir, double rs, double h)
+{
+    double r = length(posBH);
+    
+    // inside horizon
+    if (r < rs) return dir;
+
+    // get the impact direction
+    vec3 n = normalize(posBH);
+    
+    double invR2 = 1.0 / (r * r + 1e-9);
+    vec3 accel =  -float(rs * invR2) * n;
+    
+    float proj = dot(accel, dir);
+    accel -= proj * dir;
+    
+    double factor = 0.3;
+    vec3 newDir = dir + accel * float(h * factor);
+    return normalize(newDir); 
+}
+
+
+// accretion disk
+vec3 accDisk(vec3 pBH, double rs) 
+{
+    float y = pBH.y;
+
+    float eps = 1e9;
+    if (abs(y) > eps)
+        return vec3(0.0);
+
+    float r = length(pBH.xz);
+
+    if (r < diskInner || r > diskOuter)
+        return vec3(0.0);
+
+    float t = clamp((r - diskInner) / (diskOuter - diskInner), 0.0, 1.0);
+    float brightness = mix(2.0, 0.2, t);
+
+    return brightness * vec3(1.0, 0.5, 0.2);
+}
+
+
+void main() 
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+
+    if (pixel.x >= uResolution.x || pixel.y >= uResolution.y)
+        return;
+
+    // normalized camera coordinates
+    vec2 uv = (vec2(pixel) / vec2(uResolution)) * 2.0 - 1.0;
+
+    float aspect = float(uResolution.x) / float(uResolution.y);
+
+    uv.x *= aspect;
+
+    float fov = 1.0;
+
+    // build ray
+    vec3 f = normalize(camForward);
+    vec3 r = normalize(camRight);
+    vec3 u = normalize(camUp);
+
+    vec3 dir = normalize(f + uv.x * r * fov + uv.y * u * fov);
+    
+    vec3 posBH = camPos - bhPos;
+
+    double rs = 1.0; 
+
+    const int MAX_STEPS = 6000;
+    const float STEP_SIZE = 0.01;
+    const float MAX_DIST = 200.0;
+
+    vec3 colour = vec3(0.0);
+    bool done = false;
+
+    // geodesic integration
+    for (int i = 0; i < MAX_STEPS; i++)
+    {
+        double rlen = length(posBH);
+        
+        // break on BH collision
+        if (rlen < rs * 1.02)
+        {
+            colour = vec3(0,0,0);
+            done = true;
+            break;
+        }
+        
+        // check for accretion disk collision
+        vec3 diskCol = accDisk(posBH, rs);
+        if (diskCol != vec3(0.0))
+        {
+            colour = diskCol;
+            done = true;
+            break;
+        }
+        
+        if (rlen > MAX_DIST) 
+        {
+            float t = clamp(float(i) / float(MAX_STEPS), 0.0, 1.0);
+            colour = mix(vec3(0.0, 0.0, 0.02), vec3(0.02, 0.02, 0.08), t);
+            done = true;
+            break;
+        }
+
+        // calculate direction
+        vec3 newDir = geodesicStep(posBH, dir, rs, STEP_SIZE);
+        posBH += dir * float(STEP_SIZE);
+        dir = newDir; 
+    }
+    
+    if (!done) 
+    {
+        float t = length(posBH) / float(MAX_DIST);
+        t = clamp(t, 0.0, 1.0);
+        colour = mix(vec3(0.0), vec3(0.02, 0.02, 0.05), t);
+    }
+
+    imageStore(outImage, pixel, vec4(colour, 1.0));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,27 +1,25 @@
 #include "Renderer.h"
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
-extern Camera camera;
+Renderer::Renderer(Shader& shader, GLuint outputTexture)
+    : shader(shader), texture(outputTexture), width(1280), height(720)
+{
+}
 
-Renderer::Renderer(Shader& shader)
-    : shader(shader)
-{}
+
+void Renderer::setResolution(int w, int h) {
+    width = w;
+    height = h;
+}
 
 void Renderer::render()
 {
     shader.use();
     
-    shader.setVec2("resolution", 800.0f, 600.0f);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
     
-    glm::vec3 forwrd = camera.getForward();
-    glm::vec3 right = camera.getRight();
-    glm::vec3 up = camera.getUp();
-    glm::vec3 pos = camera.position;
+    shader.setInt("screenTexture", 0);
 
-    shader.setVec3("camForward", forwrd);
-    shader.setVec3("camRight", right);
-    shader.setVec3("camUp", up);
-    shader.setVec3("camPos", pos);
-    
     quad.draw();
 }
