@@ -3,15 +3,22 @@
 #include "Shader.h"
 #include "Camera.h"
 #include <glm/glm.hpp>
-/*
- * This just wraps the call to draw the fullscreen quad
- */
 
 class Renderer {
     public:
-        Renderer(Shader& shader);
+        Renderer(Shader& screenShader, Camera& cam);
         void render();
+    
     private:
-        Shader& shader;
+        Shader& screenShader;
+        Camera& camera;
+
+        Shader computeShader;
         FullscreenQuad quad;
+        
+        GLuint outputTexture = 0;
+        int texWidth = 0;
+        int texHeight = 0;
+
+        void initTexture(int w, int h);
 };

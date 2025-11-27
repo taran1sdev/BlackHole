@@ -63,7 +63,7 @@ int main() {
     }
     
     Shader shader("../shaders/fullscreen.vert", "../shaders/fullscreen.frag");
-    Renderer renderer(shader);
+    Renderer renderer(shader, camera);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <GLFW/glfw3.h>
 
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 {
@@ -30,6 +31,26 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
+}
+
+Shader::Shader(const std::string& computePath)
+{
+    std::string computeSrc = loadFile(computePath);
+    unsigned int compute = compileShader(GL_COMPUTE_SHADER, computeSrc);
+    
+    ID = glCreateProgram();
+    glAttachShader(ID, compute);
+    glLinkProgram(ID);
+
+    int success;
+    glGetProgramiv(ID, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(ID, 512, nullptr, infoLog);
+        std::cerr << "Compute shader linking failed: \n" << infoLog << std::endl;
+    }
+
+    glDeleteShader(compute);
 }
 
 // Implement our public functions 

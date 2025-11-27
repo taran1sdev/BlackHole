@@ -1,0 +1,45 @@
+#version 460 core
+
+layout (local_size_x = 8, local_size_y = 8) in;
+
+layout (rgba32f, binding = 0) uniform image2D accumImage;
+
+uniform vec2 resolution;
+uniform vec3 camPos;
+uniform vec3 camForward;
+uniform vec3 camRight;
+uniform vec3 camUp;
+
+// Schwarzschild metric geodesic integration via Dormand-Prince 5(4)
+
+// Volumetric accretion disk ray marching
+
+// Doppler beaming
+
+// HG scattering
+
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+
+    // return if pixel out of bounds
+    if (pixel.x >= int(resolution.x) || pixel.y >= int(resolution.y))
+        return;
+
+    // normalize device coordinates
+    vec2 uv = (vec2(pixel) + 0.5) / resolution * 2.0 - 1.0;
+    float aspect = resolution.x / resolution.y;
+    uv.x *= aspect;
+
+    // camera ray
+    vec3 rayDir = normalize(camForward +
+            uv.x * camRight +
+            uv.y * camUp);
+
+    // just output a gradient initially
+    float t = 0.5 * (rayDir.y + 1.0);
+    vec3 col = mix(vec3(0.05, 0.05, 0.1), vec3(0.6, 0.7, 1.0), t);
+
+    imageStore(accumImage, pixel, vec4(col, 1.0));
+}
