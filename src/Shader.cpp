@@ -1,8 +1,9 @@
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "Shader.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <GLFW/glfw3.h>
 
 Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath)
 {
@@ -63,13 +64,18 @@ void Shader::destroy() {
 }
 
 void Shader::setVec2(const std::string& name, float x, float y) const {
-    int location = glGetUniformLocation(ID, name.c_str());
-    glUniform2f(location, x, y);
+    int loc = glGetUniformLocation(ID, name.c_str());
+    glUniform2f(loc, x, y);
 }
 
 void Shader::setVec3(const std::string& name, const glm::vec3& value) const {
     int loc = glGetUniformLocation(ID, name.c_str());
     glUniform3f(loc, value.x, value.y, value.z);
+}
+
+void Shader::setFloat(const std::string& name, float val) const {
+    int loc = glGetUniformLocation(ID, name.c_str());
+    glUniform1f(loc, val);
 }
 
 // Helper function to load file from path

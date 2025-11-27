@@ -1,5 +1,4 @@
 #pragma once
-#include <glad/glad.h>
 
 /* 
  * This class creates a Vertex Array Object and a Vertex Buffer Object

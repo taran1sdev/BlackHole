@@ -1,9 +1,13 @@
-#include "Camera.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include <glm/gtc/matrix_transform.hpp>
+#include "Camera.h"
+#include "Shader.h"
 
 Camera::Camera()
 {
-    position = glm::vec3(0.0f, 0.0f, 3.0f);
+    position = glm::vec3(0.0f, 0.0f, 50.0f);
     yaw = -90.0f;
     pitch = 0.0f;
 }
@@ -56,4 +60,11 @@ void Camera::getKeys(GLFWwindow* window, float deltaTime)
         position.y += speed;
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
         position.y -= speed;
+}
+
+void Camera::uploadToShader(Shader& shader) const {
+    shader.setVec3("camPos", position);
+    shader.setVec3("camForward", getForward());
+    shader.setVec3("camRight", getRight());
+    shader.setVec3("camUp", getUp());
 }

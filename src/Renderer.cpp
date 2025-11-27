@@ -1,10 +1,13 @@
-#include "Renderer.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include "Shader.h"
 #include "Camera.h"
-#include <GLFW/glfw3.h>
+#include "BlackHole.h"
+#include "FullscreenQuad.h"
+#include "Renderer.h"
 
-Renderer::Renderer(Shader& screenShader, Camera& cam)
-    : screenShader(screenShader), camera(cam), computeShader("../shaders/blackhole.comp")
+Renderer::Renderer(Shader& screenShader, Camera& cam, BlackHole& bh)
+    : screenShader(screenShader), camera(cam), blackHole(bh), computeShader("../shaders/blackhole.comp")
 {}
 
 void Renderer::initTexture(int w, int h) {
@@ -38,18 +41,11 @@ void Renderer::render()
     glfwGetFramebufferSize(glfwGetCurrentContext(), &w, &h);    
     initTexture(w, h);
     
-    glm::vec3 f = camera.getForward();
-    glm::vec3 r = camera.getRight();
-    glm::vec3 up = camera.getUp();
-    glm::vec3 pos = camera.position;
-    
     computeShader.use();
-    computeShader.setVec2("resolution", (float)w, (float)h);
-    computeShader.setVec3("camForward", f);
-    computeShader.setVec3("camRight", r);
-    computeShader.setVec3("camUp", up);
-    computeShader.setVec3("camPos", pos);
     
+    camera.uploadToShader(computeShader); 
+    blackHole.uploadToShader(computeShader);
+
     glBindImageTexture(0, outputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     const GLuint localSizeX = 8;

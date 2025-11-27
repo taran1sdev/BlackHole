@@ -1,17 +1,18 @@
 #pragma once
-#include "FullscreenQuad.h"
 #include "Shader.h"
 #include "Camera.h"
-#include <glm/glm.hpp>
+#include "BlackHole.h"
+#include "FullscreenQuad.h"
 
 class Renderer {
     public:
-        Renderer(Shader& screenShader, Camera& cam);
+        Renderer(Shader& screenShader, Camera& cam, BlackHole& blackHole);
         void render();
     
     private:
         Shader& screenShader;
         Camera& camera;
+        BlackHole& blackHole;
 
         Shader computeShader;
         FullscreenQuad quad;

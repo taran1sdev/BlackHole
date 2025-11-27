@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include "BlackHole.h"
 #include "Shader.h"
 #include "Renderer.h"
 #include "Camera.h"
@@ -62,8 +63,9 @@ int main() {
         return -1;
     }
     
+    BlackHole bH(glm::vec3(0.0f));
     Shader shader("../shaders/fullscreen.vert", "../shaders/fullscreen.frag");
-    Renderer renderer(shader, camera);
+    Renderer renderer(shader, camera, bH);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
