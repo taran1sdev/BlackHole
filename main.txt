@@ -45,9 +45,9 @@ struct Camera {
     vec3 position() const {
         float clampedVertical = glm::clamp(vDir, 0.01f, float(PI) - 0.01f);
         return vec3(
-                radius * sin(clampedVertical) * cos(hDir),
+                radius * sin(clampedVertical) * cos(vDir),
                 radius * cos(clampedVertical),
-                radius * sin(clampedVertical) * sin(hDir)
+                radius * sin(clampedVertical) * sin(vDir)
         );        
     }
     void updateState() {
@@ -130,7 +130,8 @@ struct ObjectData {
 vector<ObjectData> objects = {
     { vec4(4e11f, 0.0f, 0.0f, 4e10f), vec4(1,1,0,1), 1.98892e30 },
     { vec4(0.0f, 0.0f, 4e11f, 4e10f), vec4(1,0,0,1), 1.98892e30 },
-    { vec4(0.0f, 0.0f, 0.0f, SagA.r_s), vec4(0,0,0,1), static_cast<float>(SagA.mass) }
+    { vec4(0.0f, 0.0f, 0.0f, SagA.r_s), vec4(0,0,0,1), static_cast<float>(SagA.mass) },
+    { vec4(6e10f, 0.0f, 0.0f, 5e10f), vec4(0,1,0,1), 1.98892e30 }
 };
 
 struct Engine {
@@ -338,9 +339,9 @@ struct Engine {
         glCompileShader(fragmentShader);
 
         GLuint shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertexShader);
-        glAttachShader(shaderProgram, fragmentShader);
-        glLinkProgram(shaderProgram);
+        glAttachShader(shaderProg, vertexShader);
+        glAttachShader(shaderProg, fragmentShader);
+        glLinkProgram(shaderProg);
 
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
@@ -593,7 +594,7 @@ void setupCameraCallbacks(GLFWwindow* window) {
             Camera* cam = (Camera*)glfwGetWindowUserPointer(win);
             cam->getMouse(x, y);
             });
-    glfwSetScrollCallback(window, [](GLFWwindow* win, double x, double y) {
+    glfwSetCursorPosCallback(window, [](GLFWwindow* win, double x, double y) {
             Camera* cam = (Camera*)glfwGetWindowUserPointer(win);
             cam->getScroll(x, y);
             });
@@ -607,7 +608,7 @@ int main() {
     lastTime = chrono::duration<double>(t0.time_since_epoch()).count();
 
     double lTime = glfwGetTime();
-    int renderW = 1280, renderH = 720, numSteps = 80000;
+    int renderW = 800, renderH = 600, numSteps = 80000;
     while (!glfwWindowShouldClose(engine.window)) {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

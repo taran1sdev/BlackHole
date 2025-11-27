@@ -1,161 +1,176 @@
 #version 460
+layout(local_size_x = 16, local_size_y = 16) in;
 
-layout (local_size_x = 16, local_size_y = 16) in;
+layout(binding = 0, rgba8) writeonly uniform image2D outImage;
+layout(std140, binding = 1) uniform Camera {
+    vec3 camPos;     float _pad0;
+    vec3 camRight;   float _pad1;
+    vec3 camUp;      float _pad2;
+    vec3 camForward; float _pad3;
+    float tanHalfFov;
+    float aspect;
+    bool moving;
+    int   _pad4;
+} cam;
 
-layout (rgba8, binding = 0) writeonly uniform image2D outImage;
+layout(std140, binding = 2) uniform Disk {
+    float disk_r1;
+    float disk_r2;
+    float disk_num;
+    float thickness;
+};
 
-uniform ivec2 uResolution;
+layout(std140, binding = 3) uniform Objects {
+    int numObjects;
+    vec4 objPosRadius[16];
+    vec4 objColour[16];
+    float  mass[16]; 
+};
 
-uniform vec3 camPos;
-uniform vec3 camForward;
-uniform vec3 camRight;
-uniform vec3 camUp;
+const float SagA_rs = 1.269e10;
+const float D_LAMBDA = 1e7;
+const double ESCAPE_R = 1e30;
 
-uniform vec3 bhPos;
-uniform float bhMass;
+vec4 objectColour = vec4(0.0);
+vec3 hitCenter = vec3(0.0);
+float hitRadius = 0.0;
 
-uniform float diskInner;
-uniform float diskOuter;
+struct Ray {
+    float x, y, z, r, theta, phi;
+    float dr, dtheta, dphi;
+    float E, L;
+};
+Ray initRay(vec3 pos, vec3 dir) {
+    Ray ray;
+    ray.x = pos.x; ray.y = pos.y; ray.z = pos.z;
+    ray.r = length(pos);
+    ray.theta = acos(pos.z / ray.r);
+    ray.phi = atan(pos.y, pos.x);
 
-const double c = 299792458.0;
-const double G = 6.67430e-11;
+    float dx = dir.x, dy = dir.y, dz = dir.z;
+    ray.dr     = sin(ray.theta)*cos(ray.phi)*dx + sin(ray.theta)*sin(ray.phi)*dy + cos(ray.theta)*dz;
+    ray.dtheta = (cos(ray.theta)*cos(ray.phi)*dx + cos(ray.theta)*sin(ray.phi)*dy - sin(ray.theta)*dz) / ray.r;
+    ray.dphi   = (-sin(ray.phi)*dx + cos(ray.phi)*dy) / (ray.r * sin(ray.theta));
 
-// integrate photon paths using Hamiltonian formulation
+    ray.L = ray.r * ray.r * sin(ray.theta) * ray.dphi;
+    float f = 1.0 - SagA_rs / ray.r;
+    float dt_dL = sqrt((ray.dr*ray.dr)/f + ray.r*ray.r*(ray.dtheta*ray.dtheta + sin(ray.theta)*sin(ray.theta)*ray.dphi*ray.dphi));
+    ray.E = f * dt_dL;
 
-vec3 geodesicStep(vec3 posBH, vec3 dir, double rs, double h)
-{
-    double r = length(posBH);
-    
-    // inside horizon
-    if (r < rs) return dir;
-
-    // get the impact direction
-    vec3 n = normalize(posBH);
-    
-    double invR2 = 1.0 / (r * r + 1e-9);
-    vec3 accel =  -float(rs * invR2) * n;
-    
-    float proj = dot(accel, dir);
-    accel -= proj * dir;
-    
-    double factor = 0.3;
-    vec3 newDir = dir + accel * float(h * factor);
-    return normalize(newDir); 
+    return ray;
 }
 
-
-// accretion disk
-vec3 accDisk(vec3 pBH, double rs) 
-{
-    float y = pBH.y;
-
-    float eps = 1e9;
-    if (abs(y) > eps)
-        return vec3(0.0);
-
-    float r = length(pBH.xz);
-
-    if (r < diskInner || r > diskOuter)
-        return vec3(0.0);
-
-    float t = clamp((r - diskInner) / (diskOuter - diskInner), 0.0, 1.0);
-    float brightness = mix(2.0, 0.2, t);
-
-    return brightness * vec3(1.0, 0.5, 0.2);
+bool intercept(Ray ray, float rs) {
+    return ray.r <= rs;
 }
 
-
-void main() 
-{
-    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-
-    if (pixel.x >= uResolution.x || pixel.y >= uResolution.y)
-        return;
-
-    // normalized camera coordinates
-    vec2 uv = (vec2(pixel) / vec2(uResolution)) * 2.0 - 1.0;
-
-    float aspect = float(uResolution.x) / float(uResolution.y);
-
-    uv.x *= aspect;
-
-    float fov = 1.0;
-
-    // build ray
-    vec3 f = normalize(camForward);
-    vec3 r = normalize(camRight);
-    vec3 u = normalize(camUp);
-
-    vec3 dir = normalize(f + uv.x * r * fov + uv.y * u * fov);
-    
-    vec3 posBH = camPos - bhPos;
-
-    double rs = 1.0; 
-
-    const int MAX_STEPS = 6000;
-    const float STEP_SIZE = 0.01;
-    const float MAX_DIST = 200.0;
-
-    vec3 colour = vec3(0.0);
-    bool done = false;
-
-    // geodesic integration
-    for (int i = 0; i < MAX_STEPS; i++)
-    {
-        double rlen = length(posBH);
-        
-        // break on BH collision
-        if (rlen < rs * 1.02)
-        {
-            colour = vec3(0,0,0);
-            done = true;
-            break;
+bool interceptObject(Ray ray) {
+    vec3 P = vec3(ray.x, ray.y, ray.z);
+    for (int i = 0; i < numObjects; ++i) {
+        vec3 center = objPosRadius[i].xyz;
+        float radius = objPosRadius[i].w;
+        if (distance(P, center) <= radius) {
+            objectColour = objColour[i];
+            hitCenter = center;
+            hitRadius = radius;
+            return true;
         }
-        
-        // check for accretion disk collision
-        vec3 diskCol = accDisk(posBH, rs);
-        if (diskCol != vec3(0.0))
-        {
-            colour = diskCol;
-            done = true;
-            break;
-        }
-        
-        if (rlen > MAX_DIST) 
-        {
-            float t = clamp(float(i) / float(MAX_STEPS), 0.0, 1.0);
-            colour = mix(vec3(0.0, 0.0, 0.02), vec3(0.02, 0.02, 0.08), t);
-            done = true;
-            break;
-        }
-
-        // calculate direction
-        vec3 newDir = geodesicStep(posBH, dir, rs, STEP_SIZE);
-        posBH += dir * float(STEP_SIZE);
-        dir = newDir; 
     }
-    
-    if (!done) 
-    {
-        float t = length(posBH) / float(MAX_DIST);
-        t = clamp(t, 0.0, 1.0);
-        colour = mix(vec3(0.0), vec3(0.02, 0.02, 0.05), t);
-    }
-
-    imageStore(outImage, pixel, vec4(colour, 1.0));
+    return false;
 }
 
+void geodesicRHS(Ray ray, out vec3 d1, out vec3 d2) {
+    float r = ray.r, theta = ray.theta;
+    float dr = ray.dr, dtheta = ray.dtheta, dphi = ray.dphi;
+    float f = 1.0 - SagA_rs / r;
+    float dt_dL = ray.E / f;
 
+    d1 = vec3(dr, dtheta, dphi);
+    d2.x = - (SagA_rs / (2.0 * r*r)) * f * dt_dL * dt_dL
+         + (SagA_rs / (2.0 * r*r * f)) * dr * dr
+         + r * (dtheta*dtheta + sin(theta)*sin(theta)*dphi*dphi);
+    d2.y = -2.0*dr*dtheta/r + sin(theta)*cos(theta)*dphi*dphi;
+    d2.z = -2.0*dr*dphi/r - 2.0*cos(theta)/(sin(theta)) * dtheta * dphi;
+}
+void rk4Step(inout Ray ray, float dL) {
+    vec3 k1a, k1b;
+    geodesicRHS(ray, k1a, k1b);
 
+    ray.r      += dL * k1a.x;
+    ray.theta  += dL * k1a.y;
+    ray.phi    += dL * k1a.z;
+    ray.dr     += dL * k1b.x;
+    ray.dtheta += dL * k1b.y;
+    ray.dphi   += dL * k1b.z;
 
+    ray.x = ray.r * sin(ray.theta) * cos(ray.phi);
+    ray.y = ray.r * sin(ray.theta) * sin(ray.phi);
+    ray.z = ray.r * cos(ray.theta);
+}
+bool crossesEquatorialPlane(vec3 oldPos, vec3 newPos) {
+    bool crossed = (oldPos.y * newPos.y < 0.0);
+    float r = length(vec2(newPos.x, newPos.z));
+    return crossed && (r >= disk_r1 && r <= disk_r2);
+}
 
+void main() {
+    int WIDTH  = 800; 
+    int HEIGHT = 600; 
 
+    ivec2 pix = ivec2(gl_GlobalInvocationID.xy);
+    if (pix.x >= WIDTH || pix.y >= HEIGHT) return;
 
+    // Init Ray
+    float u = (2.0 * (pix.x + 0.5) / WIDTH - 1.0) * cam.aspect * cam.tanHalfFov;
+    float v = (1.0 - 2.0 * (pix.y + 0.5) / HEIGHT) * cam.tanHalfFov;
+    vec3 dir = normalize(u * cam.camRight - v * cam.camUp + cam.camForward);
+    Ray ray = initRay(cam.camPos, dir);
 
+    vec4 colour = vec4(0.0);
+    vec3 prevPos = vec3(ray.x, ray.y, ray.z);
+    float lambda = 0.0;
 
+    bool hitBlackHole = false;
+    bool hitDisk      = false;
+    bool hitObject    = false;
 
+    int steps = cam.moving ? 60000 : 60000;
 
+    for (int i = 0; i < steps; ++i) {
+        if (intercept(ray, SagA_rs)) { hitBlackHole = true; break; }
+        rk4Step(ray, D_LAMBDA);
+        lambda += D_LAMBDA;
 
+        vec3 newPos = vec3(ray.x, ray.y, ray.z);
+        if (crossesEquatorialPlane(prevPos, newPos)) { hitDisk = true; break; }
+        if (interceptObject(ray)) { hitObject = true; break; }
+        prevPos = newPos;
+        if (ray.r > ESCAPE_R) break;
+    }
 
+    if (hitDisk) {
+        double r = length(vec3(ray.x, ray.y, ray.z)) / disk_r2;
+        vec3 diskColour = vec3(1.0, r, 0.2);
+        //r = 1.0 - abs(r - 0.5) * 2.0;
+        colour = vec4(diskColour, r);
 
+    } else if (hitBlackHole) {
+        colour = vec4(0.0, 0.0, 0.0, 1.0);
+
+    } else if (hitObject) {
+        vec3 P = vec3(ray.x, ray.y, ray.z);
+        vec3 N = normalize(P - hitCenter);
+        vec3 V = normalize(cam.camPos - P);
+        float ambient = 0.1;
+        float diff = max(dot(N, V), 0.0);
+        float intensity = ambient + (1.0 - ambient) * diff;
+        vec3 shaded = objectColour.rgb * intensity;
+        colour = vec4(shaded, objectColour.a);
+
+    } else {
+        colour = vec4(0.0);
+    }
+
+    imageStore(outImage, pix, colour);
+}
 

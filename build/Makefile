@@ -166,102 +166,6 @@ external/glad/src/glad.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/glad.dir/build.make CMakeFiles/glad.dir/external/glad/src/glad.c.s
 .PHONY : external/glad/src/glad.c.s
 
-src/Camera.o: src/Camera.cpp.o
-.PHONY : src/Camera.o
-
-# target to build an object file
-src/Camera.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Camera.cpp.o
-.PHONY : src/Camera.cpp.o
-
-src/Camera.i: src/Camera.cpp.i
-.PHONY : src/Camera.i
-
-# target to preprocess a source file
-src/Camera.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Camera.cpp.i
-.PHONY : src/Camera.cpp.i
-
-src/Camera.s: src/Camera.cpp.s
-.PHONY : src/Camera.s
-
-# target to generate assembly for a file
-src/Camera.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Camera.cpp.s
-.PHONY : src/Camera.cpp.s
-
-src/FullscreenQuad.o: src/FullscreenQuad.cpp.o
-.PHONY : src/FullscreenQuad.o
-
-# target to build an object file
-src/FullscreenQuad.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o
-.PHONY : src/FullscreenQuad.cpp.o
-
-src/FullscreenQuad.i: src/FullscreenQuad.cpp.i
-.PHONY : src/FullscreenQuad.i
-
-# target to preprocess a source file
-src/FullscreenQuad.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.i
-.PHONY : src/FullscreenQuad.cpp.i
-
-src/FullscreenQuad.s: src/FullscreenQuad.cpp.s
-.PHONY : src/FullscreenQuad.s
-
-# target to generate assembly for a file
-src/FullscreenQuad.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.s
-.PHONY : src/FullscreenQuad.cpp.s
-
-src/Renderer.o: src/Renderer.cpp.o
-.PHONY : src/Renderer.o
-
-# target to build an object file
-src/Renderer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Renderer.cpp.o
-.PHONY : src/Renderer.cpp.o
-
-src/Renderer.i: src/Renderer.cpp.i
-.PHONY : src/Renderer.i
-
-# target to preprocess a source file
-src/Renderer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Renderer.cpp.i
-.PHONY : src/Renderer.cpp.i
-
-src/Renderer.s: src/Renderer.cpp.s
-.PHONY : src/Renderer.s
-
-# target to generate assembly for a file
-src/Renderer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Renderer.cpp.s
-.PHONY : src/Renderer.cpp.s
-
-src/Shader.o: src/Shader.cpp.o
-.PHONY : src/Shader.o
-
-# target to build an object file
-src/Shader.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Shader.cpp.o
-.PHONY : src/Shader.cpp.o
-
-src/Shader.i: src/Shader.cpp.i
-.PHONY : src/Shader.i
-
-# target to preprocess a source file
-src/Shader.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Shader.cpp.i
-.PHONY : src/Shader.cpp.i
-
-src/Shader.s: src/Shader.cpp.s
-.PHONY : src/Shader.s
-
-# target to generate assembly for a file
-src/Shader.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/blackhole.dir/build.make CMakeFiles/blackhole.dir/src/Shader.cpp.s
-.PHONY : src/Shader.cpp.s
-
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -299,18 +203,6 @@ help:
 	@echo "... external/glad/src/glad.o"
 	@echo "... external/glad/src/glad.i"
 	@echo "... external/glad/src/glad.s"
-	@echo "... src/Camera.o"
-	@echo "... src/Camera.i"
-	@echo "... src/Camera.s"
-	@echo "... src/FullscreenQuad.o"
-	@echo "... src/FullscreenQuad.i"
-	@echo "... src/FullscreenQuad.s"
-	@echo "... src/Renderer.o"
-	@echo "... src/Renderer.i"
-	@echo "... src/Renderer.s"
-	@echo "... src/Shader.o"
-	@echo "... src/Shader.i"
-	@echo "... src/Shader.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

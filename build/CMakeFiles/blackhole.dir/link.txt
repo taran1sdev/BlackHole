@@ -1,1 +1,1 @@
-/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/blackhole.dir/link.d CMakeFiles/blackhole.dir/src/Camera.cpp.o CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o CMakeFiles/blackhole.dir/src/Renderer.cpp.o CMakeFiles/blackhole.dir/src/Shader.cpp.o CMakeFiles/blackhole.dir/src/main.cpp.o -o blackhole  libglad.a /usr/lib/libglfw.so.3.4 /usr/lib/libGL.so
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/blackhole.dir/link.d CMakeFiles/blackhole.dir/src/main.cpp.o -o blackhole  libglad.a /usr/lib/libglfw.so.3.4 /usr/lib/libGL.so /usr/lib/libGLEW.so

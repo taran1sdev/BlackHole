@@ -2,14 +2,11 @@ blackhole: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/Scrt1.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/crti.o \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o \
-  CMakeFiles/blackhole.dir/src/Camera.cpp.o \
-  CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o \
-  CMakeFiles/blackhole.dir/src/Renderer.cpp.o \
-  CMakeFiles/blackhole.dir/src/Shader.cpp.o \
   CMakeFiles/blackhole.dir/src/main.cpp.o \
   libglad.a \
   /usr/lib/libglfw.so.3.4 \
   /usr/lib/libGL.so \
+  /usr/lib/libGLEW.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libm.so \
@@ -38,6 +35,7 @@ blackhole: \
   /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/crtn.o \
   /usr/lib/libGLdispatch.so.0 \
   /usr/lib/libGLX.so.0 \
+  /usr/lib/libEGL.so.1 \
   /usr/lib/ld-linux-x86-64.so.2 \
   /usr/lib/libX11.so.6 \
   /usr/lib/libxcb.so.1 \
@@ -50,14 +48,6 @@ blackhole: \
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/crtbeginS.o:
 
-CMakeFiles/blackhole.dir/src/Camera.cpp.o:
-
-CMakeFiles/blackhole.dir/src/FullscreenQuad.cpp.o:
-
-CMakeFiles/blackhole.dir/src/Renderer.cpp.o:
-
-CMakeFiles/blackhole.dir/src/Shader.cpp.o:
-
 CMakeFiles/blackhole.dir/src/main.cpp.o:
 
 libglad.a:
@@ -65,6 +55,8 @@ libglad.a:
 /usr/lib/libglfw.so.3.4:
 
 /usr/lib/libGL.so:
+
+/usr/lib/libGLEW.so:
 
 /usr/lib/gcc/x86_64-pc-linux-gnu/15.2.1/../../../../lib/libstdc++.so:
 
@@ -121,6 +113,8 @@ libglad.a:
 /usr/lib/libGLdispatch.so.0:
 
 /usr/lib/libGLX.so.0:
+
+/usr/lib/libEGL.so.1:
 
 /usr/lib/ld-linux-x86-64.so.2:
 
