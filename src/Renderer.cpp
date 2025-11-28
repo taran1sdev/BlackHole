@@ -42,7 +42,8 @@ void Renderer::render()
     initTexture(w, h);
     
     computeShader.use();
-    
+    computeShader.setVec2("resolution", (float)w, (float)h);
+
     camera.uploadToShader(computeShader); 
     blackHole.uploadToShader(computeShader);
 
@@ -58,6 +59,8 @@ void Renderer::render()
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT); 
     
     screenShader.use();
+    screenShader.setInt("renderedImage", 0);
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, outputTexture);
 

@@ -78,6 +78,11 @@ void Shader::setFloat(const std::string& name, float val) const {
     glUniform1f(loc, val);
 }
 
+void Shader::setInt(const std::string&name, int val) const {
+    int loc = glGetUniformLocation(ID, name.c_str());
+    glUniform1f(loc, val);
+}
+
 // Helper function to load file from path
 std::string Shader::loadFile(const std::string& path) const {
     std::ifstream file(path);

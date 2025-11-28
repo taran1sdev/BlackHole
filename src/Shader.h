@@ -19,6 +19,8 @@ class Shader {
         void setVec3(const std::string& name, const glm::vec3& value) const;
         
         void setFloat(const std::string& name, float val) const;
+        
+        void setInt(const std::string& name, int val) const;
 
         void use() const;
 
