@@ -313,10 +313,10 @@ void sampleDiskVolume(vec3 posWorld, float ds,
             vec3(0.8, 0.9, 1.0),
             tNorm);
 
-    vec3 emission = baseColour * density;
+    vec3 emission = baseColour * density * 3.0;
 
     // Beer-Lambert absorption law
-    float absorbC = 2.0;
+    float absorbC = 0.5;
     float alphaStep = 1.0 - exp(-absorbC * density * ds);
     alphaStep = clamp(alphaStep, 0.0, 1.0);
 
