@@ -25,12 +25,12 @@ class Renderer {
         
         GLuint diskVolumeTexture = 1;
 
-        int diskNR = 128;
-        int diskNTheta = 256;
-        int diskNZ = 64;
+        int diskNR = 256;
+        int diskNTheta = 512;
+        int diskNZ = 128;
 
         float diskRMin = 2.0f;
-        float diskRMax = 40.0f;
+        float diskRMax = 50.0f;
         float diskZMin = -2.0f;
         float diskZMax = 2.0f;
 

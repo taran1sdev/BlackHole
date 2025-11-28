@@ -7,7 +7,6 @@ uniform float rMin;
 uniform float rMax;
 uniform float zMin;
 uniform float zMax;
-uniform float densityScale;
 
 const float PI = 3.14159265359;
 
@@ -28,14 +27,14 @@ void main() {
     float r = mix(rMin, rMax, uvw.y);
     float z = mix(zMin, zMax, uvw.z);
     
-    float H = 0.6;
+    float H = 0.6;// + 0.05 * r;
     float vert = exp(-0.5 * (z * z) / (H * H));
 
     float rin = max(rMin * 1.1, 2.5);
     float rout = rMax;
     float x = clamp((r - rin) / max((rout - rin), 1e-3), 0.0, 1.0);
 
-    float radial = pow(r, -3.0) * smoothstep(0.0, 0.1, x) * (1.0 - smoothstep(0.8, 1.0, x));
+    float radial = pow(r, -2.5) * smoothstep(0.0, 0.1, x) * (1.0 - smoothstep(0.8, 1.0, x));
 
     float Tin = 1.0;
     float Tr = Tin * pow(r / rin, -0.75) * (1.0 - sqrt(rin / max(r, rin + 1e-3)));
@@ -53,7 +52,7 @@ void main() {
 
     density = max(density, 0.0);
 
-    density *= 200.0f;
+    density *= 100.0f;
 
     imageStore(diskVolume, gid, vec4(density, Tr, noise, 1.0));
 }

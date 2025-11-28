@@ -86,8 +86,11 @@ void Renderer::render()
     glfwGetFramebufferSize(glfwGetCurrentContext(), &w, &h);    
     initTexture(w, h);
     
+    float t = static_cast<float>(glfwGetTime());
+
     computeShader.use();
     computeShader.setVec2("resolution", (float)w, (float)h);
+    computeShader.setFloat("uTime", t);
 
     camera.uploadToShader(computeShader); 
     blackHole.uploadToShader(computeShader);
