@@ -74,17 +74,25 @@ GeoState clampState(GeoState s) {
 
 // im not sure if this is correct - much more complicated that the 2D version..
 GeoState geodesic_rhs(GeoState y) {
+    //float mu = y.x.z;
     float r     = max(y.x.y, R_MIN);
     float theta = y.x.z;
+    //float theta = acos(clamp(mu, -1.0, 1.0));
     float phi   = y.x.w;
 
     float pt   = y.p.x;
     float pr   = y.p.y;
     float pth  = y.p.z;
+    //float pmu = y.p.z;
     float pphi = y.p.w;
 
     float sinTh = sin(theta);
+    //float sinTh = sqrt(max(1.0 - mu*mu, 0.0));
     float cosTh = cos(theta);
+    //float cosTh = mu;
+    
+    //float pth = (sinTh > 0.0) ? (-pmu / sinTh) : 0.0;
+
     float sin2Th = 2.0 * sinTh * cosTh;
 
     float sinThSafe = (abs(sinTh) > EPS)
@@ -95,11 +103,12 @@ GeoState geodesic_rhs(GeoState y) {
     float rm2   = r - 2.0;
     float inv_r_rm2 = 1.0 / (r * rm2);
     float r3    = r * r * r;
-
+    
     vec4 dx;
     dx.x = pt;
     dx.y = pr;
     dx.z = pth;
+    //dx.z = -sinTh * pth;
     dx.w = pphi;
 
 
@@ -138,8 +147,10 @@ GeoState geodesic_rhs(GeoState y) {
         + 2.0 * cotTh        * pth * pphi
     );
 
-    vec4 dp = vec4(dpt, dpr, dpth, dpph);
+    float dpmu = -(cosTh * pth * pth + sinTh * dpth);
 
+    vec4 dp = vec4(dpt, dpr, dpth, dpph);
+    //vec4 dp = vec4(dpt, dpr, dpmu, dpph);
     return makeState(dx, dp);
 }
 GeoState dp54_step(GeoState y, float h, out float err) {
@@ -289,7 +300,8 @@ void main()
     // spherical coordinates
     float theta0 = acos(clamp(rel.y / r0, -1.0, 1.0));
     float phi0 = atan(rel.z, rel.x);
-    
+    //float mu0 = cos(theta0);
+
     vec3 e_r = rel / r0;
 
     float sinTh0 = sin(theta0);
@@ -323,13 +335,15 @@ void main()
     float pt = 1.0 / sqrtF0;
     float pr = vr * sqrtF0;
     float pth = vth / r0;
+    
+    //float p_mu = -sin(theta0) * pth;
 
     float sinTh0Safe = max(abs(sinTh0), 0.01);
     float pphi = vph / (r0 * sinTh0Safe);
 
     // initial state
     vec4 x0 = vec4(0.0, r0, theta0, phi0);
-    vec4 p0 = vec4(pt, pr, pth, pphi);
+    vec4 p0 = vec4(pt, pr, pth/*p_mu*/, pphi);
 
     GeoState s = makeState(x0, p0);
         
@@ -342,6 +356,8 @@ void main()
     vec3 finalColour = vec3(0.0);
     bool hitBH = false;
     bool escaped = false;
+
+    float r, theta, phi;
 
     for (int i = 0; i < 2000; ++i) {
         float err;
@@ -365,39 +381,57 @@ void main()
         // accept step
         s = sNext;
         
-        float r = s.x.y;
-        float theta = s.x.z;
-        float phi = s.x.w;
+        r = s.x.y;
+        theta = s.x.z;
+        phi = s.x.w;
         
         // debug
-        if (any(isnan(s.x)) || any(isnan(s.p))) {
-            finalColour = vec3(1.0, 0.0, 1.0);
-            break;
-        }
+        //if (any(isnan(s.x)) || any(isnan(s.p))) {
+        //    finalColour = vec3(1.0, 0.0, 1.0);
+        //    break;
+        //}
 
         // black hole collision
         if (r < bh_rs * 1.001) {
             hitBH = true;
-            finalColour = vec3(0.0);
             break;
         }
         
         // escape condition
-        if (r > R_ESCAPE) {
+        if (r > R_ESCAPE && pr > 0.0) {
             escaped = true;
-            vec3 escapePos = sphToCart(r, theta, phi) + bh_position;
-            vec3 escapeDir = normalize(escapePos - camPos);
-
-            float t = 0.5 * (escapeDir.y + 1.0);
-
-            finalColour = mix(vec3(0.02, 0.02, 0.05), vec3(0.5, 0.6, 0.9), t);
             break;
         }
 
     }
-
     if (!hitBH && !escaped) {
-        finalColour = vec3(0.1, 0.1, 0.0);
+        float rEnd = s.x.y;
+        float prEnd = s.p.y;
+
+        if (rEnd < 0.5 * (R_ESCAPE + bh_rs)) {
+            hitBH = true;
+        } else if (prEnd > 0.0) {
+            escaped = true;
+        } else {
+            hitBH = true;
+        }
+    } 
+    
+    if (hitBH) {
+        finalColour = vec3(0.0);
     }
+    
+    if (escaped) {
+         vec3 escapePos = sphToCart(r, theta, phi) + bh_position;
+
+         vec3 escapeDir = normalize(escapePos - camPos);
+
+         float t = 0.5 * (escapeDir.y + 1.0);
+
+         finalColour = mix(vec3(0.02, 0.02, 0.05), vec3(0.5, 0.6, 0.9), t);
+    }
+
+    if (abs(rel.x) < 1e-3 && abs(rel.z) < 1e-3) finalColour = vec3(0.0);
+
     imageStore(accumImage, pixel, vec4(finalColour, 1.0));
 }
