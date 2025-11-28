@@ -13,6 +13,7 @@ uniform vec3 camUp;
 uniform vec3 bh_position;
 uniform float bh_rs;
 uniform float bh_rg;
+uniform float bh_spin;
 
 const float EPS = 1e-5;
 const float PI = 3.14159265359;
@@ -72,51 +73,44 @@ GeoState clampState(GeoState s) {
     return s;
 }
 
-// im not sure if this is correct - much more complicated that the 2D version..
+
+// Geodesic RHS using Christoffel symbols for Schwarzschild spacetime
 GeoState geodesic_rhs(GeoState y) {
-    //float mu = y.x.z;
     float r     = max(y.x.y, R_MIN);
     float theta = y.x.z;
-    //float theta = acos(clamp(mu, -1.0, 1.0));
     float phi   = y.x.w;
 
     float pt   = y.p.x;
     float pr   = y.p.y;
     float pth  = y.p.z;
-    //float pmu = y.p.z;
     float pphi = y.p.w;
 
-    float sinTh = sin(theta);
-    //float sinTh = sqrt(max(1.0 - mu*mu, 0.0));
-    float cosTh = cos(theta);
-    //float cosTh = mu;
-    
-    //float pth = (sinTh > 0.0) ? (-pmu / sinTh) : 0.0;
-
+    float thetaSafe = clamp(theta, 0.001, PI - 0.001);
+    float sinTh = sin(thetaSafe);
+    float cosTh = cos(thetaSafe);
     float sin2Th = 2.0 * sinTh * cosTh;
 
     float sinThSafe = (abs(sinTh) > EPS)
                       ? sinTh
                       : (sinTh >= 0.0 ? EPS : -EPS);
 
-    float inv_r = 1.0 / r;
-    float rm2   = r - 2.0;
+    float inv_r     = 1.0 / r;
+    float rm2       = r - 2.0;
     float inv_r_rm2 = 1.0 / (r * rm2);
-    float r3    = r * r * r;
-    
+    float r3        = r * r * r;
+
     vec4 dx;
     dx.x = pt;
     dx.y = pr;
     dx.z = pth;
-    //dx.z = -sinTh * pth;
     dx.w = pphi;
 
 
-    // t-component
+    // t component
     float Gamma_t_tr = inv_r_rm2;
     float dpt = -2.0 * Gamma_t_tr * pt * pr;
 
-    // r-component
+    // r component
     float Gamma_r_tt   = rm2 / r3;
     float Gamma_r_rr   = -inv_r_rm2;
     float Gamma_r_thth = (2.0 - r);
@@ -129,7 +123,7 @@ GeoState geodesic_rhs(GeoState y) {
         + Gamma_r_phph * pphi * pphi
     );
 
-    // theta-component
+    // theta component
     float Gamma_th_rth  = inv_r;
     float Gamma_th_phph = -0.5 * sin2Th;
 
@@ -138,21 +132,26 @@ GeoState geodesic_rhs(GeoState y) {
         + Gamma_th_phph      * pphi * pphi
     );
 
-    // phi-component
-    float Gamma_ph_rph  = inv_r;
-    float cotTh         = cosTh / sinThSafe;     
+    // phi component
+    float Gamma_ph_rph = inv_r;
+    float cotTh        = cosTh / sinThSafe;
 
     float dpph = -(
           2.0 * Gamma_ph_rph * pr  * pphi
         + 2.0 * cotTh        * pth * pphi
     );
+    
+    float a = bh_spin;
 
-    float dpmu = -(cosTh * pth * pth + sinTh * dpth);
+    float drag = 2.0 / (r*r*r);
+
+    dpph += a * drag * pt * pr;
 
     vec4 dp = vec4(dpt, dpr, dpth, dpph);
-    //vec4 dp = vec4(dpt, dpr, dpmu, dpph);
+
     return makeState(dx, dp);
 }
+
 GeoState dp54_step(GeoState y, float h, out float err) {
     // coeffecients... Thank god for AI...
     const float a21 = 1.0 / 5.0;

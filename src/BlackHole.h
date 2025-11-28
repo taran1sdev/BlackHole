@@ -3,7 +3,7 @@
 
 class BlackHole {
     public:
-        explicit BlackHole(const glm::vec3& position = glm::vec3(0.0f));
+        explicit BlackHole(const glm::vec3& position = glm::vec3(0.0f), float spin = 0.6f);
 
         glm::vec3 getPosition() const;
         float getSchildRadius() const;
@@ -12,4 +12,5 @@ class BlackHole {
         void uploadToShader(class Shader& computeShader) const;
     private:
         glm::vec3 position;
+        float spin;
 };
