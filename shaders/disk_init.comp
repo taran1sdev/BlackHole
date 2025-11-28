@@ -1,0 +1,35 @@
+#version 460 core
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
+
+layout(rgba16f, binding = 0) writeonly uniform image3D diskVolume;
+
+uniform float rMin;
+uniform float rMax;
+uniform float zMin;
+uniform float zMax;
+
+const float PI = 3.14159265;
+
+void main() {
+    ivec3 gid = ivec3(gl_GlobalInvocationID);
+    ivec3 size = imageSize(diskVolume);
+    if (any(greaterThanEqual(gid, size))) return;
+    
+    vec3 uvw = (vec3(gid) + 0.5) / vec3(size);
+
+    float theta = uvw.x * 2.0 * PI;
+    float r = mix(rMin, rMax, uvw.y);
+    float z = mix(zMin, zMax, uvw.z);
+
+    float density = exp(-pow(z / 0.5, 2.0));
+
+    // radial falloff
+    density *= exp(-pow((r - 8.0) / 4.0, 2.0));
+
+    // noise
+    density *= 0.75 + 0.25 * sin(8.0 * theta + r);
+
+    float temperature = 0.3 + 0.7 * exp(-r * 0.1);
+
+    imageStore(diskVolume, gid, vec4(density, temperature, 0.0, 1.0));
+}

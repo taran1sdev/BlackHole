@@ -66,6 +66,7 @@ int main() {
     BlackHole bH(glm::vec3(0.0f));
     Shader shader("../shaders/fullscreen.vert", "../shaders/fullscreen.frag");
     Renderer renderer(shader, camera, bH);
+    renderer.init();
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);

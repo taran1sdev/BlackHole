@@ -7,8 +7,33 @@
 #include "Renderer.h"
 
 Renderer::Renderer(Shader& screenShader, Camera& cam, BlackHole& bh)
-    : screenShader(screenShader), camera(cam), blackHole(bh), computeShader("../shaders/blackhole.comp")
+    : screenShader(screenShader), camera(cam), blackHole(bh), computeShader("../shaders/blackhole.comp"), diskVolumeShader("../shaders/disk_init.comp")
 {}
+
+void Renderer::init() {
+    initDiskVolumeTexture();
+
+    diskVolumeShader.use();
+
+    glBindImageTexture(
+            0, diskVolumeTexture,
+            0, GL_TRUE, 0,
+            GL_WRITE_ONLY,
+            GL_RGBA16F
+    );
+
+    diskVolumeShader.setFloat("rMin", diskRMin);
+    diskVolumeShader.setFloat("rMax", diskRMax);
+    diskVolumeShader.setFloat("zMin", diskZMin);
+    diskVolumeShader.setFloat("zMax", diskZMax);
+    
+    GLuint gx = (diskNTheta + 3) / 4;
+    GLuint gy = (diskNR + 3) / 4;
+    GLuint gz = (diskNZ + 3) / 4;
+
+    glDispatchCompute(gx, gy, gz);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
 
 void Renderer::initTexture(int w, int h) {
     if (outputTexture != 0 && (w == texWidth && h == texHeight)) return;
@@ -35,6 +60,26 @@ void Renderer::initTexture(int w, int h) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void Renderer::initDiskVolumeTexture() {
+    glGenTextures(1, &diskVolumeTexture);
+    glBindTexture(GL_TEXTURE_3D, diskVolumeTexture);
+
+    glTexStorage3D(
+            GL_TEXTURE_3D,
+            1,
+            GL_RGBA16F,
+            diskNTheta,
+            diskNR,
+            diskNZ
+    );
+    
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);    
+}
+
 void Renderer::render()
 {
     int w, h;
@@ -46,6 +91,19 @@ void Renderer::render()
 
     camera.uploadToShader(computeShader); 
     blackHole.uploadToShader(computeShader);
+    
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, diskVolumeTexture);
+    computeShader.setInt("diskVolume", 1);
+
+    computeShader.setFloat("disk_rMin", diskRMin);
+    computeShader.setFloat("disk_rMax", diskRMax);
+    computeShader.setFloat("disk_zMin", diskZMin);
+    computeShader.setFloat("disk_zMax", diskZMax);
+
+    computeShader.setInt("diskNR", diskNR);
+    computeShader.setInt("diskNTheta", diskNTheta);
+    computeShader.setInt("diskNZ", diskNZ);
 
     glBindImageTexture(0, outputTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
