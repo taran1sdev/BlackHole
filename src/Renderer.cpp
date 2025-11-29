@@ -126,6 +126,7 @@ void Renderer::render()
     
     screenShader.use();
     screenShader.setInt("renderedImage", 0);
+    screenShader.setFloat("uTime", t);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, outputTexture);

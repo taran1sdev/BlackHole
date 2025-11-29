@@ -458,6 +458,7 @@ void main()
     
     vec3 accumColour = vec3(0.0);
     float accumAlpha = 0.0;
+    float finalAlpha;
 
     vec3 prevPosBH = sphToCart(r0, theta0,  phi0);
     float r, theta, phi;
@@ -515,6 +516,7 @@ void main()
         }
 
     }
+    
     if (!hitBH && !escaped) {
         float rEnd = s.x.y;
         float prEnd = s.p.y;
@@ -530,17 +532,14 @@ void main()
     
     if (hitBH) {
         finalColour = vec3(0.0);
+        finalAlpha = 1.0;
     }
     
     if (escaped) {
-         vec3 escapePos = sphToCart(r, theta, phi) + bh_position;
-
-         vec3 escapeDir = normalize(escapePos - camPos);
-
-         float t = 0.5 * (escapeDir.y + 1.0);
-
-         finalColour = mix(vec3(0.02, 0.02, 0.05), vec3(0.5, 0.6, 0.9), t);
-    }
+         finalColour = vec3(0.0);
+         finalAlpha = 0.0;
+    } 
+    
 
     finalColour = accumColour + (1.0 - accumAlpha) * vec3(0.0); 
 
