@@ -321,11 +321,11 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float tNorm = clamp(temperature, 0.0, 1.0);
     vec3 baseColour = 
         mix(vec3(1.0, 0.6, 0.2),
-            vec3(0.8, 0.9, 1.0),
+            vec3(0.7, 0.8, 1.0),
             tNorm);
 
-    vec3 emission = baseColour * density * 10.0;
-    
+    vec3 emission = baseColour * pow(density, 1.15) * 4.0;
+
     vec3 vDir = normalize(vec3(-pos.z, 0.0, pos.x));
     float beta = 0.4 * pow(max(rCyl, disk_rMin), -0.5);
     beta = clamp(beta, 0.0, 0.9);
@@ -347,7 +347,7 @@ void sampleDiskVolume(vec3 posWorld, float ds,
    // }
     
     // Beer-Lambert absorption law
-    float absorbC = 0.15;
+    float absorbC = 0.35;
     float alphaStep = 1.0 - exp(-absorbC * density * ds);
     alphaStep = clamp(alphaStep, 0.0, 1.0);
 

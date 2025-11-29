@@ -30,9 +30,9 @@ class Renderer {
         int diskNZ = 128;
 
         float diskRMin = 2.0f;
-        float diskRMax = 50.0f;
-        float diskZMin = -2.0f;
-        float diskZMax = 2.0f;
+        float diskRMax = 20.0f;
+        float diskZMin = -4.0f;
+        float diskZMax = 4.0f;
 
         void initTexture(int w, int h);
         void initDiskVolumeTexture();

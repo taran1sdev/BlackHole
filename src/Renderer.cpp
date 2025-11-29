@@ -27,6 +27,10 @@ void Renderer::init() {
     diskVolumeShader.setFloat("zMin", diskZMin);
     diskVolumeShader.setFloat("zMax", diskZMax);
     
+    float t = static_cast<float>(glfwGetTime());
+    
+    diskVolumeShader.setFloat("uTime", t);
+
     GLuint gx = (diskNTheta + 3) / 4;
     GLuint gy = (diskNR + 3) / 4;
     GLuint gz = (diskNZ + 3) / 4;
@@ -86,8 +90,9 @@ void Renderer::render()
     glfwGetFramebufferSize(glfwGetCurrentContext(), &w, &h);    
     initTexture(w, h);
     
-    float t = static_cast<float>(glfwGetTime());
 
+    float t = static_cast<float>(glfwGetTime());
+    
     computeShader.use();
     computeShader.setVec2("resolution", (float)w, (float)h);
     computeShader.setFloat("uTime", t);
