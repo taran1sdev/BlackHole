@@ -2,10 +2,10 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
-#include "BlackHole.h"
-#include "Shader.h"
-#include "Renderer.h"
-#include "Camera.h"
+#include "BlackHole.hpp"
+#include "Shader.hpp"
+#include "Renderer.hpp"
+#include "Camera.hpp"
 
 Camera camera;
 float lastX = 400, lastY = 300, deltaTime = 0.0f, lastFrame = 0.0f;

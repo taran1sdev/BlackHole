@@ -1,10 +1,14 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Shader.h"
-#include "Camera.h"
-#include "BlackHole.h"
-#include "FullscreenQuad.h"
-#include "Renderer.h"
+
+#include "ddsLoader.hpp"
+#include "Shader.hpp"
+#include "Camera.hpp"
+#include "BlackHole.hpp"
+#include "FullscreenQuad.hpp"
+#include "Renderer.hpp"
+
+#include <iostream>
 
 Renderer::Renderer(Shader& screenShader, Camera& cam, BlackHole& bh)
     : screenShader(screenShader), camera(cam), blackHole(bh), computeShader("../shaders/blackhole.comp"), diskVolumeShader("../shaders/disk_init.comp")
@@ -37,6 +41,20 @@ void Renderer::init() {
 
     glDispatchCompute(gx, gy, gz);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    initStarCubemap();
+}
+
+void Renderer::initStarCubemap() {
+    starCubemap = loadDDSCubemap("../assets/stars.dds");
+    
+    if (!starCubemap) {
+        std::cerr << "Failed to load star cubemap\n";
+    }
+
+    computeShader.use();
+    computeShader.setInt("starCube", 4);
+    glUseProgram(0);
 }
 
 void Renderer::initTexture(int w, int h) {
@@ -102,6 +120,10 @@ void Renderer::render()
     
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_3D, diskVolumeTexture);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, starCubemap);
+
     computeShader.setInt("diskVolume", 1);
 
     computeShader.setFloat("disk_rMin", diskRMin);

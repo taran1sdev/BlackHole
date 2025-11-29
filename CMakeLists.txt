@@ -15,6 +15,8 @@ file(GLOB SRC_FILES "src/*.cpp")
 
 add_executable(blackhole ${SRC_FILES})
 
+target_include_directories(blackhole PUBLIC external)
+
 target_link_libraries(blackhole
     glad
     glfw

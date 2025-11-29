@@ -2,8 +2,8 @@
 #include <GLFW/glfw3.h>
 
 #include <glm/gtc/matrix_transform.hpp>
-#include "Camera.h"
-#include "Shader.h"
+#include "Camera.hpp"
+#include "Shader.hpp"
 
 Camera::Camera()
 {

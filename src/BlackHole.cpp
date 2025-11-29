@@ -1,5 +1,5 @@
-#include "BlackHole.h"
-#include "Shader.h"
+#include "BlackHole.hpp"
+#include "Shader.hpp"
 
 BlackHole::BlackHole(const glm::vec3& position, float spin)
     : position(position), spin(glm::clamp(spin, -1.0f, 1.0f))

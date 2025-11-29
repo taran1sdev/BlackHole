@@ -1,5 +1,5 @@
 #include <glad/glad.h>
-#include "FullscreenQuad.h"
+#include "FullscreenQuad.hpp"
 
 FullscreenQuad::FullscreenQuad()
 {

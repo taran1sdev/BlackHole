@@ -4,6 +4,8 @@ layout (local_size_x = 8, local_size_y = 8) in;
 
 layout (rgba32f, binding = 0) uniform image2D accumImage;
 
+layout (binding = 4) uniform samplerCube starCube;
+
 uniform vec2 resolution;
 uniform vec3 camPos;
 uniform vec3 camForward;
@@ -37,6 +39,18 @@ const float R_ESCAPE = 200.0;
 float safeDiv(float num, float den) {
     return num / max(abs(den), EPS);
 }
+
+vec3 hable_filmic(vec3 x)
+{
+    const float A = 0.15;
+    const float B = 0.50;
+    const float C = 0.10;
+    const float D = 0.20;
+    const float E = 0.02;
+    const float F = 0.30;
+    return ((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E/F;
+}
+
 
 // Schwarzschild metric geodesic integration via Dormand-Prince 5(4)
 struct GeoState {
@@ -459,11 +473,13 @@ void main()
     vec3 accumColour = vec3(0.0);
     float accumAlpha = 0.0;
     float finalAlpha;
+    bool accum = true;
 
     vec3 prevPosBH = sphToCart(r0, theta0,  phi0);
     float r, theta, phi;
 
     for (int i = 0; i < 2000; ++i) {
+
         float err;
         GeoState sNext = dp54_step(s, h, err);
 
@@ -489,13 +505,16 @@ void main()
         theta = s.x.z;
         phi = s.x.w;
         
+        if ( r < 8.0)  h = min(h, 0.1);
+        if ( r < 4.0)  h = min(h, 0.04);
+        if ( r < 2.5)  h = min(h, 0.02);
+
         vec3 posBH = sphToCart(r, theta, phi);
         vec3 posWorld = posBH + bh_position;
 
         float ds = length(posBH - prevPosBH);
         prevPosBH = posBH;
-
-        sampleDiskVolume(posWorld, ds, accumColour, accumAlpha);
+        if (accum) sampleDiskVolume(posWorld, ds, accumColour, accumAlpha);
 
         // debug
         //if (any(isnan(s.x)) || any(isnan(s.p))) {
@@ -506,42 +525,27 @@ void main()
         // black hole collision
         if (r < bh_rs * 1.001) {
             hitBH = true;
-            break;
+            accum = false;
         }
-        
+       
         // escape condition
-        if (r > R_ESCAPE && pr > 0.0) {
+        if (r > R_ESCAPE ) {
             escaped = true;
-            break;
+            accum = false;
         }
 
     }
     
-    if (!hitBH && !escaped) {
-        float rEnd = s.x.y;
-        float prEnd = s.p.y;
+    vec3 escapePos = sphToCart(r, theta, phi) + bh_position;
+    vec3 escapeDir = normalize(escapePos - bh_position);
+        
+    vec3 starColour = texture(starCube, escapeDir).rgb;        
 
-        if (rEnd < 0.5 * (R_ESCAPE + bh_rs)) {
-            hitBH = true;
-        } else if (prEnd > 0.0) {
-            escaped = true;
-        } else {
-            hitBH = true;
-        }
-    } 
+    starColour = hable_filmic(starColour * 1.25);
+    starColour = starColour / hable_filmic(vec3(1.0));    
+    starColour = pow(starColour, vec3(1.0/2.2));
     
-    if (hitBH) {
-        finalColour = vec3(0.0);
-        finalAlpha = 1.0;
-    }
+    finalColour = accumColour + (1.0 - accumAlpha) * starColour;
     
-    if (escaped) {
-         finalColour = vec3(0.0);
-         finalAlpha = 0.0;
-    } 
-    
-
-    finalColour = accumColour + (1.0 - accumAlpha) * vec3(0.0); 
-
     imageStore(accumImage, pixel, vec4(finalColour, 1.0));
 }
