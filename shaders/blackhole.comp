@@ -376,11 +376,6 @@ void sampleDiskVolume(vec3 posWorld, float ds,
 }
 
 
-// Doppler beaming
-
-// HG scattering
-
-
 void main()
 {
     ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
