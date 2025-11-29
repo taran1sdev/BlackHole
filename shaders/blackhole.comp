@@ -300,10 +300,22 @@ vec3 diskColour(float T) {
 }
 
 // Volumetric accretion disk ray marching
+vec3 blackbody(float T)
+{
+    float t = T * 8000.0 + 1000.0;
+
+    float x = t / 1000.0;
+    float r = clamp(1.292936186062745*x - 1.435130167017530, 0.0, 1.0);
+    float g = clamp(2.364235402206525*x - 2.510877646116905, 0.0, 1.0);
+    float b = clamp(4.804835102936814*x - 7.998016235020652, 0.0, 1.0);
+
+    return vec3(r, g, b);
+}
+
 void sampleDiskVolume(vec3 posWorld, float ds, 
         inout vec3 accumColour, inout float accumAlpha) 
 {
-    if (accumAlpha >= 0.99) return;
+    if (accumAlpha >= 0.995) return;
 
     vec3 pos = posWorld - bh_position;
 
@@ -328,46 +340,43 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float v = (rCyl - disk_rMin) / (disk_rMax - disk_rMin);
     float w = (zCyl - disk_zMin) / (disk_zMax - disk_zMin);
 
-    // avoid sampling outside
-    //if (v <= 0.0 || v >= 1.0 || w <= 0.0 || w >= 1.0) return;
-
     vec4 voxel = texture(diskVolume, vec3(u, v, w));
+    
     float density = voxel.r;
     float temperature = voxel.g;
     float turbulence = voxel.b;
 
-    if (density <= 1e-5) return;
+    if (density <= 1e-4) return;
 
     // hotter = bluer
-    float tNorm = clamp(temperature, 0.0, 1.0);
+    vec3 base = blackbody(temperature);
+
+    vec3 emission = base * pow(density, 1.2) * 16.0;
     
-
-    vec3 baseColour = diskColour(tNorm);
-
-    vec3 emission = baseColour * pow(density, 1.15) * 4.0;
-
     vec3 vDir = normalize(vec3(-pos.z, 0.0, pos.x));
-    float beta = 0.4 * pow(max(rCyl, disk_rMin), -0.5);
-    beta = clamp(beta, 0.0, 0.9);
+    float beta = 0.40 * pow(max(rCyl, disk_rMin), -0.5);
+    beta = clamp(beta, 0.0, 0.85);
 
     float gammaF = 1.0 / sqrt(1.0 - beta * beta);
     vec3 viewDir = normalize(camPos - posWorld);
     float cosA = dot(vDir, viewDir);
 
     float doppler = 1.0 / (gammaF * (1.0 - beta * cosA));
-    float boost = pow(max(doppler, 0.0), 2.5);
-    emission *= boost;
+    emission *= pow(max(doppler, 0.0), 2.2);
+    
+    float photonR = 3.0 * bh_rs;
+    float d = abs(rCyl - photonR);
+    float ringTerm = exp(-d * 48.0);
+    emission += ringTerm * vec3(3.5);
 
     // stop inner disk emission overwhelming photon ring
-   // float rISCO = 6.0;
-   // if (rCyl < rISCO) {
-   //     float fade = smoothstep(0.0, 1.0, (rCyl - disk_rMin) / 
-   //             (rISCO - disk_rMin));
-   //     emission *= fade;
-   // }
+    float rISCO = 6.0;
+    float nearISCO = exp(-0.5 * pow((rCyl - rISCO) / 0.7, 2.0));
     
+    emission *= 1.0 + 8.0 * nearISCO;
+
     // Beer-Lambert absorption law
-    float absorbC = 0.35;
+    float absorbC = 0.5;
     float alphaStep = 1.0 - exp(-absorbC * density * ds);
     alphaStep = clamp(alphaStep, 0.0, 1.0);
 
@@ -470,10 +479,13 @@ void main()
     float finalAlpha;
     bool accum = true;
 
+    const float ds_vol = 0.015;
+    float accumDist = 0.0;
+
     vec3 prevPosBH = sphToCart(r0, theta0,  phi0);
     float r, theta, phi;
 
-    for (int i = 0; i < 2000; ++i) {
+    for (int i = 0; i < 4000; ++i) {
 
         float err;
         GeoState sNext = dp54_step(s, h, err);
@@ -509,7 +521,12 @@ void main()
 
         float ds = length(posBH - prevPosBH);
         prevPosBH = posBH;
-        if (accum) sampleDiskVolume(posWorld, ds, accumColour, accumAlpha);
+        
+        accumDist += ds;
+        if (accumDist >= ds_vol) {
+            sampleDiskVolume(posWorld, ds_vol, accumColour, accumAlpha);
+            accumDist = 0.0;
+        }
 
         // debug
         //if (any(isnan(s.x)) || any(isnan(s.p))) {
