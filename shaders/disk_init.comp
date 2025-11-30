@@ -48,7 +48,7 @@ void main() {
     theta = mod(theta, 2.0 * PI);
 
     float H = abs(z);
-    float diskThickness = 0.3;
+    float diskThickness = 0.25;
     float vert = exp(-pow(H / diskThickness, 2.5));
 
     float radial = exp(-r * 0.08);
@@ -65,8 +65,20 @@ void main() {
 
     density *= smoothstep(rMin * 1.05, rMin * 1.2, r);
     density = max(density, 0.0);
+    
+    // temperature calculations
 
-    float temp = mix(1.0, 0.3, H / diskThickness);
+    // increase vertical contrast 
+    float tVert = pow(clamp(H / diskThickness, 0.0, 1.0), 1.7);
+    
+    // hotter near ISCO
+    float tRad = pow(r / rMin, -2.2);
+
+    float temp = clamp(tRad * (1.0 - 0.75 * tVert), 0.0, 1.0);
+
+    // add a bit of turbulence 
+    temp += (smallTurb - 1.0) * 0.25;
+    temp = clamp(temp, 0.0, 1.0);
 
     imageStore(diskVolume, gid, vec4(density, temp, smallTurb, 1.0));
 }
