@@ -316,7 +316,7 @@ vec3 blackbody(float T) {
 }
 
 void sampleDiskVolume(vec3 posWorld, float ds, 
-        inout vec3 accumColour, inout float accumAlpha) 
+        inout vec3 accumColour, inout float accumAlpha, inout bool hitDisk) 
 {
     if (accumAlpha >= 0.995) return;
 
@@ -350,6 +350,8 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float turbulence = voxel.b;
 
     if (density <= 1e-4) return;
+    
+    hitDisk = true;
 
     vec3 base = blackbody(temperature);
 
@@ -382,7 +384,8 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float photonR = 3.0 * bh_rs;
     float d = abs(rCyl - photonR);
     float ringTerm = exp(-d * 48.0);
-    emission += ringTerm * vec3(3.5);
+    emission += ringTerm * vec3(4.5);
+    emission *= 1.0 + ringTerm * 0.5;
 
     // stop inner disk emission overwhelming photon ring
     float rISCO = 6.0;
@@ -391,8 +394,9 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     emission *= 1.0 + 8.0 * nearISCO;
     
     // Removes the large  halo 
-    float zNorm = abs(zCyl) / (disk_zMax * 0.35);
-    float zFalloff = exp(-pow(zNorm, 3.2));
+    float zNorm = abs(zCyl) / (disk_zMax * 0.4);
+    //float zFalloff = exp(-pow(zNorm, 3.2));
+    float zFalloff = exp(-abs(zCyl) * 7.0);
     emission *= zFalloff;
     
     float inner = smoothstep(disk_rMin * 1.05, disk_rMin * 1.25, rCyl);
@@ -400,8 +404,18 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float radialMask = inner * outer;
     emission *= radialMask * 1.4;
     
+    float innerShadow = smoothstep(bh_rs * 1.1, bh_rs * 1.6, rCyl);
+    emission *= innerShadow;
+    
+    float diskEdge = smoothstep(disk_rMin * 0.9, disk_rMin * 1.05, rCyl);
+    emission *= diskEdge;
+
     float rFog = smoothstep(disk_rMax * 0.5, disk_rMax * 0.7, rCyl);
     emission *= (1.0 - rFog);
+    
+    // Remove the flared wings
+    float flare = smoothstep(disk_rMax * 0.45, disk_rMax * 0.6, rCyl);
+    emission *= mix(1.0, 0.2, flare);
 
     // gravitational redshift
     float up = smoothstep(0.0, 0.2, zCyl);
@@ -412,9 +426,32 @@ void sampleDiskVolume(vec3 posWorld, float ds,
 
     // lower disk redder
     emission += down * vec3(0.8, 0.4, 0.1) * density * 0.3;
-    
+
+    // carve out the photon ring
+    float gapInnerR = bh_rs * 1.05;
+    float gapOuterR = photonR * 0.96;
+
+    bool inRadialGap = (rCyl > gapInnerR && rCyl < gapOuterR);
+
+    float midLimit = smoothstep(0.0, 0.12, abs(zCyl));
+
+    if (inRadialGap) {
+        float suppress = 1.0 - (1.0 - midLimit);
+        emission *= suppress;
+    }
+
+    float midCut = 1.0 - exp(-pow(zNorm / 0.15, 2.2));
+    float under = smoothstep(0.0, -0.1, zCyl);
+
+    float underF = mix(0.35, 1.0, midCut);
+
+    emission *= mix(1.0, underF, under);
     // Remove wide arc
-    emission *= smoothstep(0.0, 0.05, abs(zCyl)); 
+    //emission *= smoothstep(0.0, 0.05, abs(zCyl)); 
+    
+    // add a little turbulence 
+    emission *= mix(0.85, 1.25, turbulence);
+
     // Beer-Lambert absorption law
     float absorbC = 1.2;
     float alphaStep = 1.0 - exp(-absorbC * density * ds);
@@ -447,6 +484,21 @@ void main()
     // camera position relative to BH
     vec3 rel = camPos - bh_position;
     float r0 = length(rel);
+
+    vec3 toBH = normalize(bh_position - camPos);
+    float cosAng = dot(rayDir, toBH);
+    cosAng = clamp(cosAng, -1.0, 1.0);
+    
+    float sin2 = max(0.0, 1.0 - cosAng * cosAng);
+    float b2 = r0 * r0 * sin2;
+
+    float bCrit = 2.598 * bh_rs;
+    float bCrit2 = bCrit * bCrit;
+    bool inShadow = (b2 < bCrit2 * 1.01);
+    
+    if (inShadow) {
+        imageStore(accumImage, pixel, vec4(0.0, 0.0, 0.0, 1.0));
+    }
 
     // camera is inside the event horizon
     if (r0 < 2.5) {
@@ -512,11 +564,11 @@ void main()
 
     vec3 finalColour = vec3(0.0);
     bool hitBH = false;
+    bool hitDisk = false;
     bool escaped = false;
     
     vec3 accumColour = vec3(0.0);
     float accumAlpha = 0.0;
-    float finalAlpha;
     bool accum = true;
 
     const float ds_vol = 0.015;
@@ -524,7 +576,7 @@ void main()
 
     vec3 prevPosBH = sphToCart(r0, theta0,  phi0);
     float r, theta, phi;
-
+    
     for (int i = 0; i < 2000; ++i) {
 
         float err;
@@ -564,7 +616,7 @@ void main()
         
         accumDist += ds;
         if (accumDist >= ds_vol) {
-            sampleDiskVolume(posWorld, ds_vol, accumColour, accumAlpha);
+            sampleDiskVolume(posWorld, ds_vol, accumColour, accumAlpha, hitDisk);
             accumDist = 0.0;
         }
 
@@ -579,7 +631,7 @@ void main()
             hitBH = true;
             accum = false;
         }
-       
+
         // escape condition
         if (r > R_ESCAPE ) {
             escaped = true;
@@ -597,7 +649,15 @@ void main()
     starColour = starColour / hable_filmic(vec3(1.0));    
     starColour = pow(starColour, vec3(1.0/2.2));
     
-    finalColour = accumColour + (1.0 - accumAlpha) * starColour;
+    finalColour = starColour; 
     
+    if (hitDisk ) {
+        finalColour = accumColour + (1.0 - accumAlpha) * starColour;
+    }
+    
+    if (hitBH && !hitDisk) {
+        finalColour = vec3(0.0);
+    }
+
     imageStore(accumImage, pixel, vec4(finalColour, 1.0));
 }

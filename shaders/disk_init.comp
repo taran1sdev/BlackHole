@@ -73,6 +73,7 @@ void main() {
     
     // hotter near ISCO
     float tRad = pow(r / rMin, -2.2);
+    tRad = clamp(tRad, 0.0, 1.0);
 
     float temp = clamp(tRad * (1.0 - 0.75 * tVert), 0.0, 1.0);
 
