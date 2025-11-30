@@ -1,36 +1,54 @@
 #version 460 core
-layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
-
-layout(rgba16f, binding = 0) writeonly uniform image3D diskVolume;
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 4) in;
+layout (rgba32f, binding = 0) writeonly uniform image3D diskVolume;
 
 uniform float rMin;
 uniform float rMax;
 uniform float zMin;
 uniform float zMax;
-
 uniform float uTime;
 
 const float PI = 3.14159265359;
 
+
 float hash(vec3 p) {
-    p = fract(p * 0.3183099 + vec3(0.1, 0.2, 0.3));
-    p += dot(p, p.yzx + 19.19);
-    return fract(p.x * p.y * p.z * 157.0);
+    return fract(sin(dot(p, vec3(17.23, 53.11, 91.17))) * 43758.5453);
 }
 
-float noise_3(vec3 p) {
-    float n  = hash(p);
-    float amp = 1.0;
+float valueNoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    float n000 = hash(i + vec3(0,0,0));
+    float n100 = hash(i + vec3(1,0,0));
+    float n010 = hash(i + vec3(0,1,0));
+    float n110 = hash(i + vec3(1,1,0));
+    float n001 = hash(i + vec3(0,0,1));
+    float n101 = hash(i + vec3(1,0,1));
+    float n011 = hash(i + vec3(0,1,1));
+    float n111 = hash(i + vec3(1,1,1));
+    float n00 = mix(n000, n100, f.x);
+    float n10 = mix(n010, n110, f.x);
+    float n01 = mix(n001, n101, f.x);
+    float n11 = mix(n011, n111, f.x);
+    float n0 = mix(n00, n10, f.y);
+    float n1 = mix(n01, n11, f.y);
+    return mix(n0, n1, f.z);
+}
+
+float fbmRidged(vec3 p) {
+    float sum = 0.0;
+    float amp = 0.5;
     float freq = 1.0;
-    
-    for (int i = 0; i < 4; i++) {
-        n += amp * hash(p * freq);
-        freq *= 2.3;
-        amp *= 0.45;
+    for (int i = 0; i < 6; ++i) {
+        float n = 1.0 - abs(valueNoise(p * freq) - 0.5) * 2.0;
+        sum += n * amp;
+        amp *= 0.5;
+        freq *= 2.0;
     }
-
-    return n; 
+    return sum;
 }
+
 
 void main() {
     ivec3 gid  = ivec3(gl_GlobalInvocationID);
@@ -39,48 +57,41 @@ void main() {
 
     vec3 uvw = (vec3(gid) + 0.5) / vec3(size);
 
-    float theta = uvw.x * 2.0 * PI;
-    float r     = mix(rMin, rMax, uvw.y);
-    float z     = mix(zMin, zMax, uvw.z);
+    float theta = uvw.x * 2.0 * PI - PI;
+    float r = mix(rMin, rMax, uvw.y);
+    float y = mix(zMin, zMax, uvw.z);
 
-    float omega = 1.4 * pow(r, -1.5);
-    theta += omega * uTime;
-    theta = mod(theta, 2.0 * PI);
+    float H = abs(y);
+    float halfThickness = (zMax - zMin) * 0.5;
+    float verticalFalloff = exp(-pow(H / (halfThickness * 0.7), 2.0));
 
-    float H = abs(z);
-    float diskThickness = 0.25;
-    float vert = exp(-pow(H / diskThickness, 2.5));
+    float falloffIn  = smoothstep(rMin, rMin * 1.2, r);
+    float falloffOut = 1.0 - smoothstep(rMax * 0.8, rMax, r);
+    float baseDensity = falloffIn * falloffOut * verticalFalloff;
 
-    float radial = exp(-r * 0.08);
-    
-    float ringFreq = 30.0;
-    float ring = 0.5 + 0.5 * sin(r * ringFreq + uTime * 0.15);
-    float ringMix = mix(1.0, ring, 0.15);
-    
-    float turb = hash(vec3(theta * 40.0, r * 6.0, z * 20.0 + uTime * 0.3));
-    float smallTurb = mix(0.7, 1.3, turb);
+    vec3 warpCoords = vec3(r * cos(theta), y, r * sin(theta)) * 1.5;
+    vec3 warp = vec3(
+        fbmRidged(warpCoords + 13.7),
+        fbmRidged(warpCoords + 24.2),
+        fbmRidged(warpCoords + 19.1)
+    );
+    vec3 warped = warpCoords + (warp - 0.5) * 2.0 * 1.2;
 
-    float density = radial * vert * ringMix;
-    density *= smallTurb;
+    float tangentialStretch = 25.0;
+    vec3 filamentCoords = warped * vec3(1.0, tangentialStretch, 1.0) * 1.8;
+    float filaments = pow(fbmRidged(filamentCoords), 4.0);
 
-    density *= smoothstep(rMin * 1.05, rMin * 1.2, r);
-    density = max(density, 0.0);
-    
-    // temperature calculations
+    vec3 clumpCoords = warped * 0.5;
+    float clumps = fbmRidged(clumpCoords);
 
-    // increase vertical contrast 
-    float tVert = pow(clamp(H / diskThickness, 0.0, 1.0), 1.7);
-    
-    // hotter near ISCO
-    float tRad = pow(r / rMin, -2.2);
-    tRad = clamp(tRad, 0.0, 1.0);
+    float combinedNoise = mix(filaments, clumps, 0.6);
 
-    float temp = clamp(tRad * (1.0 - 0.75 * tVert), 0.0, 1.0);
+    float density = baseDensity * combinedNoise * 3.0; 
+    density = pow(density * 1.5, 3.0);                
 
-    // add a bit of turbulence 
-    temp += (smallTurb - 1.0) * 0.25;
-    temp = clamp(temp, 0.0, 1.0);
+    float temp = pow(rMin / (r + 1e-4), 2.5);
+    temp = clamp(pow(temp, 0.8), 0.0, 1.0);
 
-    imageStore(diskVolume, gid, vec4(density, temp, smallTurb, 1.0));
+    imageStore(diskVolume, gid, vec4(density, temp, 0.0, 1.0));
 }
 

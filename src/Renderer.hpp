@@ -28,14 +28,14 @@ class Renderer {
         
         GLuint diskVolumeTexture = 0;
 
-        int diskNR = 256;
-        int diskNTheta = 512;
+        int diskNR = 512;
+        int diskNTheta = 1024;
         int diskNZ = 128;
 
-        float diskRMin = 2.0f;
-        float diskRMax = 20.0f;
-        float diskZMin = -4.0f;
-        float diskZMax = 4.0f;
+        float diskRMin = 2.5f;
+        float diskRMax = 12.0f;
+        float diskZMin = -0.4f;
+        float diskZMax = 0.4f;
         
         void initStarCubemap();
         void initTexture(int w, int h);
