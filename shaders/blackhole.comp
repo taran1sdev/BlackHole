@@ -30,15 +30,10 @@ uniform int diskNZ;
 
 uniform float uTime;
 
-const float EPS = 1e-5;
+const float EPS = 1e-6;
 const float PI = 3.14159265359;
 const float R_MIN = 2.0 + 1e-3;
 const float R_ESCAPE = 200.0;
-
-// little helper - stops division by zero
-float safeDiv(float num, float den) {
-    return num / max(abs(den), EPS);
-}
 
 // Schwarzschild metric geodesic integration via Dormand-Prince 5(4)
 struct GeoState {
@@ -84,35 +79,46 @@ GeoState geoSub(GeoState a, GeoState b) {
 
 GeoState clampState(GeoState s) {
     s.x.y = max(s.x.y, R_MIN);
-    s.x.z = clamp(s.x.z, 0.001, PI - 0.001);
+    
+    float theta = s.x.z;
+    if (theta < 0.0) {
+        theta = -theta;
+        s.p.z = -s.p.z;
+    }
+    if (theta > PI) {
+        theta = 2.0 * PI - theta;
+        s.p.z = -s.p.z;
+    }
+    s.x.z = clamp(theta, 0.0001, PI - 0.0001);
+
+    s.x.w = mod(s.x.w + PI, 2.0 * PI) - PI;
     return s;
 }
 
 
 // Geodesic RHS using Christoffel symbols for Schwarzschild spacetime
 GeoState geodesic_rhs(GeoState y) {
-    float r     = max(y.x.y, R_MIN);
+    float r = max(y.x.y, R_MIN);
     float theta = y.x.z;
-    float phi   = y.x.w;
+    float phi = y.x.w;
 
-    float pt   = y.p.x;
-    float pr   = y.p.y;
-    float pth  = y.p.z;
+    float pt = y.p.x;
+    float pr = y.p.y;
+    float pth = y.p.z;
     float pphi = y.p.w;
 
-    float thetaSafe = clamp(theta, 0.001, PI - 0.001);
+    float thetaSafe = clamp(theta, 0.0001, PI - 0.0001); 
+
     float sinTh = sin(thetaSafe);
     float cosTh = cos(thetaSafe);
-    float sin2Th = 2.0 * sinTh * cosTh;
-
-    float sinThSafe = (abs(sinTh) > EPS)
-                      ? sinTh
-                      : (sinTh >= 0.0 ? EPS : -EPS);
-
-    float inv_r     = 1.0 / r;
-    float rm2       = r - 2.0;
+    
+    float sinThSafe = max(abs(sinTh), EPS);
+    float sin2Th = 2.0 * sinThSafe * cosTh;
+    
+    float inv_r = 1.0 / r;
+    float rm2 = r - 2.0;
     float inv_r_rm2 = 1.0 / (r * rm2);
-    float r3        = r * r * r;
+    float r3 = r * r * r;
 
     vec4 dx;
     dx.x = pt;
@@ -129,7 +135,7 @@ GeoState geodesic_rhs(GeoState y) {
     float Gamma_r_tt   = rm2 / r3;
     float Gamma_r_rr   = -inv_r_rm2;
     float Gamma_r_thth = (2.0 - r);
-    float Gamma_r_phph = (2.0 - r) * sinTh * sinTh;
+    float Gamma_r_phph = (2.0 - r) * sinThSafe * sinThSafe;
 
     float dpr = -(
           Gamma_r_tt   * pt   * pt
@@ -149,16 +155,16 @@ GeoState geodesic_rhs(GeoState y) {
 
     // phi component
     float Gamma_ph_rph = inv_r;
-    float cotTh        = cosTh / sinThSafe;
+    float cotTh = cosTh / sinThSafe;
 
     float dpph = -(
           2.0 * Gamma_ph_rph * pr  * pphi
-        + 2.0 * cotTh        * pth * pphi
+        + 2.0 * cotTh * pth * pphi
     );
     
     float a = bh_spin;
 
-    float drag = 2.0 / (r*r*r);
+    float drag = 2.0 / r3;
 
     dpph += a * drag * pt * pr;
 
@@ -303,9 +309,9 @@ void sampleDiskVolume(vec3 posWorld, float ds,
     float density = d.r;
     float temp = d.g;
 
-    vec3 diskColorCold = vec3(1.0, 0.4, 0.1);
-    vec3 diskColorHot  = vec3(1.0, 1.0, 0.95);
-    vec3 baseColor = mix(diskColorCold, diskColorHot, temp);
+    vec3 diskColourCold = vec3(1.0, 0.4, 0.1);
+    vec3 diskColourHot  = vec3(1.0, 1.0, 0.95);
+    vec3 baseColour = mix(diskColourCold, diskColourHot, temp);
 
     vec3 tangential = normalize(vec3(-rel.z, 0.0, rel.x));
     float orbitalSpeed = sqrt(1.0 / (r + 1e-4));
@@ -318,28 +324,28 @@ void sampleDiskVolume(vec3 posWorld, float ds,
 
     float dopplerStrength = 7.0;
     float brightness = pow(delta, dopplerStrength);
-    vec3 colorShift = vec3(1.0 / delta, 1.0, delta);
-    baseColor *= colorShift * brightness;
+    vec3 colourShift = vec3(1.0 / delta, 1.0, delta);
+    baseColour *= colourShift * brightness;
 
     float shadowWidth = 0.1;
     float shadowStrength = 0.9;
     float shadowFalloff = smoothstep(shadowWidth, 0.0, abs(y / disk_zMax));
     float shadowFactor = 1.0 - shadowStrength * shadowFalloff;
-    baseColor *= shadowFactor;
+    baseColour *= shadowFactor;
 
     float heightAtten = exp(-pow(abs(y) / (disk_zMax * 0.7), 2.5));
     float equatorialDark = exp(-pow(abs(y) / (disk_zMax * 0.25), 3.0));
     float verticalMix = mix(heightAtten, equatorialDark, 0.7);
-    baseColor *= mix(0.2, 1.0, verticalMix);
+    baseColour *= mix(0.2, 1.0, verticalMix);
 
     float halo = exp(-pow(abs(y) / (disk_zMax * 2.5), 3.0));
-    vec3 haloColor = baseColor * 0.3 * halo;
+    vec3 haloColour = baseColour * 0.3 * halo;
     float corona = exp(-pow(abs(y) / (disk_zMax * 4.0), 2.0)) * 0.5;
-    vec3 coronaColor = baseColor * vec3(1.2, 0.9, 0.7) * corona;
+    vec3 coronaColour = baseColour * vec3(1.2, 0.9, 0.7) * corona;
 
     float emissiveStrength = mix(3.0, 15.0, temp);
     float absorption = exp(-density * ds * 6.0); 
-    vec3 emitted = (baseColor * emissiveStrength * density + haloColor + coronaColor) * ds;
+    vec3 emitted = (baseColour * emissiveStrength * density + haloColour + coronaColour) * ds;
 
     accumColour += emitted * (1.0 - absorption) * (1.0 - accumAlpha);
     accumAlpha += (1.0 - absorption) * (1.0 - accumAlpha);
@@ -392,7 +398,7 @@ void main()
     float phi0 = atan(rel.z, rel.x);
 
     vec3 e_r = rel / r0;
-
+    
     float sinTh0 = sin(theta0);
     float cosTh0 = cos(theta0);
     float sinPh0 = sin(phi0);
