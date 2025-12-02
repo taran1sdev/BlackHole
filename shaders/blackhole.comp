@@ -453,7 +453,6 @@ void main()
     
     vec3 accumColour = vec3(0.0);
     float accumAlpha = 0.0;
-    bool accum = true;
 
     const float ds_vol = 0.015;
     float accumDist = 0.0;
@@ -510,15 +509,14 @@ void main()
 
         if (r < photonSphere + 0.003){ 
             hitBH = true;
-            accum = false;
+            break;
         }
 
         // escape condition
         if (r > R_ESCAPE ) {
             escaped = true;
-            accum = false;
+            break;
         }
-
     }
     
     vec3 escapePos = sphToCart(r, theta, phi) + bh_position;
@@ -527,11 +525,7 @@ void main()
     vec3 starColour = texture(starCube, escapeDir).rgb;
 
     if (hitBH) {       
-        if (hitDisk) {
-            finalColour = accumColour + (1.0 - accumAlpha) * starColour;
-        } else {
-            finalColour = vec3(0.0);
-        }
+        finalColour = hitDisk ? accumColour : vec3(0.0);
     } else if (hitDisk) {
         finalColour = accumColour + (1.0 - accumAlpha) * starColour;
     } else {
