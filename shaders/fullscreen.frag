@@ -31,6 +31,8 @@ void main() {
     }
 
     float bright = luminance(colour);
+    float boost = 0.18 * exp(-pow((bright - 0.25) / 0.18, 2.0));
+    colour += colour * boost;
     vec3 bloom = blur * smoothstep(0.3, 1.0, bright) * 0.15;
 
     float flare = exp(-abs(vUV.y - 0.5) * 15.0) * 0.8;
@@ -46,7 +48,7 @@ void main() {
     colour *= vignette;
     colour += grain;
 
-    colour = toneMapACES(colour * 1.5);  
+    colour = toneMapACES(colour * 1.65);  
     colour = pow(colour, vec3(1.0 / 2.2));
 
     FragColour = vec4(colour, 1.0);
